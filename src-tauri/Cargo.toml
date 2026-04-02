@@ -1,0 +1,29 @@
+[package]
+name = "sift"
+version = "0.1.0"
+description = "RAW+JPG Photo Culling Tool"
+authors = ["Sift"]
+edition = "2021"
+
+[lib]
+name = "sift_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+walkdir = "2"
+trash = "5"
+kamadak-exif = "0.6"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+rayon = "1.10"
+natord = "1.0"
+uuid = { version = "1", features = ["v4"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
