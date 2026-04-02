@@ -21,7 +21,7 @@ async function selectFolder() {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: 'Select photo folder',
+      title: '选择照片文件夹',
     })
 
     if (selected && typeof selected === 'string') {
@@ -31,7 +31,7 @@ async function selectFolder() {
       scanComplete.value = true
     }
   } catch (e: any) {
-    scanError.value = e.message || 'Failed to scan folder'
+    scanError.value = e.message || '扫描文件夹失败'
   }
 }
 
@@ -56,7 +56,7 @@ function startCulling() {
           Sift
         </h1>
         <p class="text-sm text-sift-muted font-light">
-          RAW+JPG, One Click Away
+          RAW+JPG 一键筛选
         </p>
         <div class="h-0.5 w-12 mx-auto mt-3 bg-gradient-to-r from-sift-accent to-blue-400 rounded-full" />
       </div>
@@ -77,7 +77,7 @@ function startCulling() {
                      animate-spin"
             />
           </div>
-          <p class="text-sift-muted text-sm">Scanning files...</p>
+          <p class="text-sift-muted text-sm">正在扫描文件...</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ function startCulling() {
             >
               <div class="flex items-center gap-2 mb-1">
                 <Image :size="14" class="text-sift-star" />
-                <span class="text-xs text-sift-muted">JPG Only</span>
+                <span class="text-xs text-sift-muted">仅 JPG</span>
               </div>
               <span class="text-2xl font-bold text-white">
                 {{ session.scanResult.jpgOnlyCount }}
@@ -124,7 +124,7 @@ function startCulling() {
             >
               <div class="flex items-center gap-2 mb-1">
                 <Camera :size="14" class="text-sift-accent" />
-                <span class="text-xs text-sift-muted">Total</span>
+                <span class="text-xs text-sift-muted">总计</span>
               </div>
               <span class="text-2xl font-bold text-white">
                 {{ session.scanResult.totalFiles }}
@@ -148,7 +148,7 @@ function startCulling() {
             style="animation: slideUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1) 300ms both"
             @click="startCulling"
           >
-            Start Culling
+            开始筛选
             <ArrowRight :size="16" />
           </button>
 
@@ -157,7 +157,7 @@ function startCulling() {
             v-else
             class="text-center text-sift-muted text-sm py-4"
           >
-            No JPG files found in this folder
+            该文件夹中未找到 JPG 文件
           </p>
 
           <!-- Rescan button -->
@@ -167,7 +167,7 @@ function startCulling() {
                    btn-spring"
             @click="selectFolder"
           >
-            Choose Another Folder
+            选择其他文件夹
           </button>
         </div>
       </div>
@@ -193,9 +193,9 @@ function startCulling() {
             :class="isHovering ? 'text-sift-accent' : 'text-sift-muted'"
           />
           <div class="text-center">
-            <p class="text-sm text-sift-text mb-1">Select Photo Folder</p>
+            <p class="text-sm text-sift-text mb-1">选择照片文件夹</p>
             <p class="text-xs text-sift-muted">
-              Choose a folder containing RAW + JPG files
+              选择包含 RAW + JPG 文件的文件夹
             </p>
           </div>
         </button>
@@ -208,7 +208,7 @@ function startCulling() {
 
       <!-- Supported formats hint -->
       <p class="text-[10px] text-sift-muted/50 mt-8 text-center">
-        Supports CR2 · CR3 · NEF · ARW · RAF · ORF · RW2 · DNG · PEF · 3FR · IIQ and more
+        支持 CR2 · CR3 · NEF · ARW · RAF · ORF · RW2 · DNG · PEF · 3FR · IIQ 等格式
       </p>
     </div>
   </div>

@@ -53,10 +53,10 @@ async function handleArchive() {
     }))
 
     const result = await archivePhotos(session.folderPath, pairsData)
-    resultMessage.value = `Archived ${result.movedCount} files`
+    resultMessage.value = `已归档 ${result.movedCount} 个文件`
     isComplete.value = true
   } catch (e: any) {
-    resultMessage.value = `Archive failed: ${e.message || e}`
+    resultMessage.value = `归档失败：${e.message || e}`
   } finally {
     isArchiving.value = false
     unlisten()
@@ -80,10 +80,10 @@ async function handleExport() {
     }))
 
     const result = await exportPicks(pairsData, selected)
-    resultMessage.value = `Exported ${result.exportedCount} starred files to ${result.exportFolder}`
+    resultMessage.value = `已导出 ${result.exportedCount} 个标记文件至 ${result.exportFolder}`
     isComplete.value = true
   } catch (e: any) {
-    resultMessage.value = `Export failed: ${e.message || e}`
+    resultMessage.value = `导出失败：${e.message || e}`
   } finally {
     isExporting.value = false
   }
@@ -125,21 +125,21 @@ const progressPercent = computed(() => {
             <div class="mx-auto w-16 h-16 rounded-full bg-sift-success/20 flex items-center justify-center mb-4">
               <CheckCircle :size="32" class="text-sift-success" />
             </div>
-            <h3 class="text-lg font-bold text-white mb-2">Done!</h3>
+            <h3 class="text-lg font-bold text-white mb-2">完成！</h3>
             <p class="text-sm text-sift-muted mb-6">{{ resultMessage }}</p>
             <button
               class="w-full h-11 rounded-xl bg-sift-card text-white text-sm
                      hover:bg-sift-border transition-colors btn-spring"
               @click="done"
             >
-              Back to Home
+              返回首页
             </button>
           </div>
 
           <!-- Archiving Progress -->
           <div v-else-if="isArchiving || isExporting" class="py-4">
             <h3 class="text-lg font-bold text-white text-center mb-4">
-              {{ isArchiving ? 'Archiving...' : 'Exporting...' }}
+              {{ isArchiving ? '归档中...' : '导出中...' }}
             </h3>
             <!-- Progress Bar -->
             <div class="h-2 bg-sift-card rounded-full overflow-hidden mb-3">
@@ -159,22 +159,22 @@ const progressPercent = computed(() => {
           <!-- Default: Archive Options -->
           <div v-else>
             <h3 class="text-lg font-bold text-white text-center mb-1">
-              Archive & Export
+              归档与导出
             </h3>
             <p class="text-xs text-sift-muted text-center mb-5">
-              Organize your photos
+              整理你的照片
             </p>
 
             <!-- Stats Summary -->
             <div class="grid grid-cols-2 gap-3 mb-5">
               <div class="bg-sift-card/60 rounded-xl p-3 border-l-2 border-sift-star">
-                <p class="text-[11px] text-sift-muted">Starred</p>
+                <p class="text-[11px] text-sift-muted">已标记</p>
                 <p class="text-lg font-bold text-white">
                   <RollingNumber :value="starredPairs.length" />
                 </p>
               </div>
               <div class="bg-sift-card/60 rounded-xl p-3 border-l-2 border-sift-success">
-                <p class="text-[11px] text-sift-muted">Surviving</p>
+                <p class="text-[11px] text-sift-muted">保留</p>
                 <p class="text-lg font-bold text-white">
                   <RollingNumber :value="survivingPairs.length" />
                 </p>
@@ -183,9 +183,9 @@ const progressPercent = computed(() => {
 
             <!-- Archive path -->
             <div class="bg-sift-card/40 rounded-lg px-3 py-2 mb-5">
-              <p class="text-[11px] text-sift-muted mb-1">Archive to</p>
+              <p class="text-[11px] text-sift-muted mb-1">归档至</p>
               <p class="text-xs text-white truncate">{{ session.folderPath }}/</p>
-              <p class="text-[10px] text-sift-muted mt-0.5">→ RAW/ and JPG/ subfolders</p>
+              <p class="text-[10px] text-sift-muted mt-0.5">→ RAW/ 和 JPG/ 子文件夹</p>
             </div>
 
             <!-- Actions -->
@@ -197,7 +197,7 @@ const progressPercent = computed(() => {
                 @click="handleArchive"
               >
                 <Archive :size="16" />
-                Archive All Surviving Photos
+                归档所有保留的照片
               </button>
 
               <button
@@ -208,14 +208,14 @@ const progressPercent = computed(() => {
                 @click="handleExport"
               >
                 <Download :size="16" />
-                Export {{ starredPairs.length }} Starred Photos
+                导出 {{ starredPairs.length }} 张标记照片
               </button>
 
               <button
                 class="w-full h-10 text-sift-muted text-xs hover:text-white transition-colors"
                 @click="close"
               >
-                Cancel
+                取消
               </button>
             </div>
           </div>

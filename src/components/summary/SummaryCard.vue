@@ -23,10 +23,10 @@ const segments = computed(() => {
   let offset = 0
 
   const result = [
-    { count: s, color: '#F59E0B', label: 'Starred', offset: 0, length: 0 },
-    { count: d, color: '#EF4444', label: 'Deleted', offset: 0, length: 0 },
-    { count: k, color: '#6B7280', label: 'Skipped', offset: 0, length: 0 },
-    { count: u, color: '#3B82F6', label: 'Remaining', offset: 0, length: 0 },
+    { count: s, color: '#F59E0B', label: '已标记', offset: 0, length: 0 },
+    { count: d, color: '#EF4444', label: '已删除', offset: 0, length: 0 },
+    { count: k, color: '#6B7280', label: '已跳过', offset: 0, length: 0 },
+    { count: u, color: '#3B82F6', label: '未处理', offset: 0, length: 0 },
   ]
 
   for (const seg of result) {
@@ -59,7 +59,7 @@ function openArchive() {
                border border-white/5 shadow-2xl"
       >
         <h2 class="text-xl font-bold text-white text-center mb-6">
-          All Photos Reviewed ✨
+          全部审阅完毕 ✨
         </h2>
 
         <!-- Donut Chart -->
@@ -82,7 +82,7 @@ function openArchive() {
               {{ session.totalCount }}
             </text>
             <text x="50" y="60" text-anchor="middle" class="fill-sift-muted" font-size="7">
-              photos
+              张
             </text>
           </svg>
         </div>
