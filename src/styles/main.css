@@ -91,6 +91,7 @@ html, body, #app {
   overflow: hidden;
   height: 1.25em;
   line-height: 1.25em;
+  vertical-align: middle;
 }
 
 .rolling-digit {
@@ -215,6 +216,17 @@ html, body, #app {
 
 .backdrop-enter-from,
 .backdrop-leave-to {
+  opacity: 0;
+}
+
+/* Nav arrow fade (opacity only, no transform to avoid position jumping) */
+.nav-fade-enter-active,
+.nav-fade-leave-active {
+  transition: opacity 150ms ease;
+}
+
+.nav-fade-enter-from,
+.nav-fade-leave-to {
   opacity: 0;
 }
 

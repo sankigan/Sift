@@ -1,8 +1,8 @@
 # Sift
 
-> RAW+JPG Photo Culling Tool — One Click Away
+> RAW + JPG Photo Culling Tool — One Click Away
 
-Sift 是一个为 RAW+JPG 双格式拍摄的摄影师设计的跨平台筛图工具。
+Sift 是一个为 RAW + JPG 双格式拍摄的摄影师设计的跨平台筛图工具。
 
 ## 功能
 

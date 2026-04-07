@@ -56,7 +56,7 @@ function startCulling() {
           Sift
         </h1>
         <p class="text-sm text-sift-muted font-light">
-          RAW+JPG 一键筛选
+          RAW + JPG 一键筛选
         </p>
         <div class="h-0.5 w-12 mx-auto mt-3 bg-gradient-to-r from-sift-accent to-blue-400 rounded-full" />
       </div>

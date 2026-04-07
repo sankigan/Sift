@@ -75,9 +75,8 @@ function handleMouseLeaveNav() {
         v-if="!isLoading && currentSrc"
         :key="session.currentIndex"
         :src="currentSrc"
-        class="absolute inset-0 w-full h-full object-contain z-20
-               transition-transform duration-100"
-        :style="{ transform }"
+        class="absolute inset-0 w-full h-full object-contain z-20"
+        :style="{ transform, willChange: 'transform' }"
         draggable="false"
       />
     </Transition>
@@ -95,14 +94,14 @@ function handleMouseLeaveNav() {
     </div>
 
     <!-- Left Navigation Arrow -->
-    <Transition name="page-fade">
+    <Transition name="nav-fade">
       <button
         v-if="showLeftNav"
         class="absolute left-3 top-1/2 -translate-y-1/2 z-30
                w-10 h-20 rounded-full
                bg-black/30 backdrop-blur-sm
                flex items-center justify-center
-               hover:bg-black/50 transition-colors btn-spring"
+               hover:bg-black/50 transition-colors"
         @click.stop="session.goPrev()"
       >
         <svg class="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -112,14 +111,14 @@ function handleMouseLeaveNav() {
     </Transition>
 
     <!-- Right Navigation Arrow -->
-    <Transition name="page-fade">
+    <Transition name="nav-fade">
       <button
         v-if="showRightNav"
         class="absolute right-3 top-1/2 -translate-y-1/2 z-30
                w-10 h-20 rounded-full
                bg-black/30 backdrop-blur-sm
                flex items-center justify-center
-               hover:bg-black/50 transition-colors btn-spring"
+               hover:bg-black/50 transition-colors"
         @click.stop="session.goNext()"
       >
         <svg class="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">

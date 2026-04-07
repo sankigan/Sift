@@ -43,73 +43,57 @@ const isMac = navigator.platform.toUpperCase().includes('MAC')
 
 <template>
   <div
-    class="absolute bottom-20 left-1/2 -translate-x-1/2 z-40
-           px-6 py-3 rounded-2xl
+    class="absolute bottom-16 left-1/2 -translate-x-1/2 z-40
+           px-2 py-1.5 rounded-xl
            bg-black/40 backdrop-blur-xl
            shadow-2xl shadow-black/30
            border border-white/5
-           flex items-center gap-8"
+           flex items-center gap-1"
   >
     <!-- Star Button -->
     <button
-      class="flex flex-col items-center gap-1.5 group btn-spring"
+      class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg group btn-spring
+             hover:bg-sift-star/15 transition-colors"
       @click="handleStar"
     >
-      <div
-        class="w-12 h-12 rounded-xl flex items-center justify-center
-               transition-all duration-200
-               bg-sift-star/10 group-hover:bg-sift-star/25"
-        :class="{ 'star-burst': starActive }"
-      >
-        <Star
-          :size="20"
-          class="transition-colors"
-          :class="session.currentPair?.status === 'starred'
+      <Star
+        :size="16"
+        class="transition-colors"
+        :class="[
+          starActive ? 'scale-110' : '',
+          session.currentPair?.status === 'starred'
             ? 'text-sift-star fill-sift-star'
-            : 'text-sift-star'"
-        />
-      </div>
-      <div class="flex items-center gap-1">
-        <span class="text-[11px] text-sift-muted group-hover:text-white transition-colors">标记</span>
-        <kbd class="text-[9px] text-sift-muted/50 bg-white/5 px-1 rounded">F</kbd>
-      </div>
+            : 'text-sift-star',
+        ]"
+      />
+      <span class="text-[11px] text-sift-muted group-hover:text-white transition-colors">标记</span>
+      <kbd class="text-[9px] text-sift-muted/40 bg-white/5 px-1 rounded">F</kbd>
     </button>
+
+    <div class="w-px h-4 bg-white/10" />
 
     <!-- Delete Button -->
     <button
-      class="flex flex-col items-center gap-1.5 group btn-spring"
+      class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg group btn-spring
+             hover:bg-sift-delete/15 transition-colors"
       @click="handleDelete"
     >
-      <div
-        class="w-12 h-12 rounded-xl flex items-center justify-center
-               transition-all duration-200
-               bg-sift-delete/10 group-hover:bg-sift-delete/25"
-        :class="{ 'scale-110': deleteActive }"
-      >
-        <Trash2 :size="20" class="text-sift-delete" />
-      </div>
-      <div class="flex items-center gap-1">
-        <span class="text-[11px] text-sift-muted group-hover:text-white transition-colors">删除</span>
-        <kbd class="text-[9px] text-sift-muted/50 bg-white/5 px-1 rounded">X</kbd>
-      </div>
+      <Trash2 :size="16" class="text-sift-delete" />
+      <span class="text-[11px] text-sift-muted group-hover:text-white transition-colors">删除</span>
+      <kbd class="text-[9px] text-sift-muted/40 bg-white/5 px-1 rounded">X</kbd>
     </button>
+
+    <div class="w-px h-4 bg-white/10" />
 
     <!-- Skip Button -->
     <button
-      class="flex flex-col items-center gap-1.5 group btn-spring"
+      class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg group btn-spring
+             hover:bg-white/10 transition-colors"
       @click="handleSkip"
     >
-      <div
-        class="w-12 h-12 rounded-xl flex items-center justify-center
-               transition-all duration-200
-               bg-sift-skip/10 group-hover:bg-sift-skip/25"
-      >
-        <SkipForward :size="20" class="text-sift-muted group-hover:text-white transition-colors" />
-      </div>
-      <div class="flex items-center gap-1">
-        <span class="text-[11px] text-sift-muted group-hover:text-white transition-colors">跳过</span>
-        <kbd class="text-[9px] text-sift-muted/50 bg-white/5 px-1 rounded">→</kbd>
-      </div>
+      <SkipForward :size="16" class="text-sift-muted group-hover:text-white transition-colors" />
+      <span class="text-[11px] text-sift-muted group-hover:text-white transition-colors">跳过</span>
+      <kbd class="text-[9px] text-sift-muted/40 bg-white/5 px-1 rounded">&rarr;</kbd>
     </button>
   </div>
 </template>
