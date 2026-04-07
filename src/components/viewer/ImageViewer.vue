@@ -3,44 +3,45 @@
 // ImageViewer - Core image preview with zoom, pan, ambient glow
 // ============================================================
 
-import { ref, watch, computed, onMounted } from 'vue'
-import { useSessionStore } from '@/stores/sessionStore'
-import { useViewStore } from '@/stores/viewStore'
-import { useImageLoader } from '@/composables/useImageLoader'
-import { useImageZoom } from '@/composables/useImageZoom'
-import { useAmbientColor } from '@/composables/useAmbientColor'
-import SkeletonImage from '@/components/common/SkeletonImage.vue'
+import { ref } from 'vue';
+import { useSessionStore } from '@/stores/sessionStore';
+import { useViewStore } from '@/stores/viewStore';
+import { useImageLoader } from '@/composables/useImageLoader';
+import { useImageZoom } from '@/composables/useImageZoom';
+import { useAmbientColor } from '@/composables/useAmbientColor';
+import SkeletonImage from '@/components/common/SkeletonImage.vue';
 
-const session = useSessionStore()
-const view = useViewStore()
+const session = useSessionStore();
+const view = useViewStore();
 
-const containerRef = ref<HTMLElement | null>(null)
-const { isLoading, currentSrc, thumbnailSrc, loadError } = useImageLoader()
-const { transform, isZoomed, handleWheel, handleDoubleClick, handleMouseDown } =
-  useImageZoom(containerRef)
-const { ambientStyle } = useAmbientColor()
+const containerRef = ref<HTMLElement | null>(null);
+const { isLoading, currentSrc, thumbnailSrc, loadError, naturalWidth, naturalHeight } = useImageLoader();
+const { imageStyle, zoomPercent, isZoomed, handleWheel, handleDoubleClick, handleMouseDown } =
+  useImageZoom(containerRef, naturalWidth, naturalHeight);
+const { ambientStyle } = useAmbientColor();
 
-const showLeftNav = ref(false)
-const showRightNav = ref(false)
+const showLeftNav = ref(false);
+const showRightNav = ref(false);
 
 function handleMouseMoveNav(e: MouseEvent) {
-  if (!containerRef.value) return
-  const rect = containerRef.value.getBoundingClientRect()
-  const x = e.clientX - rect.left
-  showLeftNav.value = x < 80 && session.currentIndex > 0
-  showRightNav.value = x > rect.width - 80 && !session.isLastPhoto
+  if (!containerRef.value) return;
+  const rect = containerRef.value.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  showLeftNav.value = x < 80 && session.currentIndex > 0;
+  showRightNav.value = x > rect.width - 80 && !session.isLastPhoto;
 }
 
 function handleMouseLeaveNav() {
-  showLeftNav.value = false
-  showRightNav.value = false
+  showLeftNav.value = false;
+  showRightNav.value = false;
 }
 </script>
 
 <template>
   <div
     ref="containerRef"
-    class="relative w-full h-full overflow-hidden bg-sift-bg select-none"
+    class="relative w-full h-full overflow-hidden bg-sift-bg select-none
+           flex items-center justify-center"
     :class="{ 'cursor-grab': isZoomed, 'cursor-default': !isZoomed }"
     @wheel.prevent="handleWheel"
     @dblclick="handleDoubleClick"
@@ -70,16 +71,14 @@ function handleMouseLeaveNav() {
     </Transition>
 
     <!-- Main Image -->
-    <Transition :name="'slide-' + session.slideDirection">
-      <img
-        v-if="!isLoading && currentSrc"
-        :key="session.currentIndex"
-        :src="currentSrc"
-        class="absolute inset-0 w-full h-full object-contain z-20"
-        :style="{ transform, willChange: 'transform' }"
-        draggable="false"
-      />
-    </Transition>
+    <img
+      v-if="!isLoading && currentSrc"
+      :key="session.currentIndex"
+      :src="currentSrc"
+      class="z-20 shrink-0"
+      :style="imageStyle"
+      draggable="false"
+    />
 
     <!-- Error State -->
     <div
@@ -92,6 +91,19 @@ function handleMouseLeaveNav() {
       </svg>
       <p class="text-sm">图片加载失败</p>
     </div>
+
+    <!-- Zoom Level Indicator -->
+    <Transition name="nav-fade">
+      <div
+        v-if="isZoomed"
+        class="absolute top-3 left-3 z-30
+               px-2.5 py-1 rounded-lg
+               bg-black/50 backdrop-blur-sm
+               text-[11px] text-white/70 font-mono"
+      >
+        {{ zoomPercent }}%
+      </div>
+    </Transition>
 
     <!-- Left Navigation Arrow -->
     <Transition name="nav-fade">

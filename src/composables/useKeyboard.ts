@@ -104,7 +104,7 @@ export function useKeyboard() {
 
       case '-':
         e.preventDefault()
-        view.zoomLevel = Math.max(view.zoomLevel / 1.25, 0.1)
+        view.zoomLevel = Math.max(view.zoomLevel / 1.25, 0.5)
         break
     }
   }

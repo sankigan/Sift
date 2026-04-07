@@ -46,35 +46,27 @@ const progressWidth = computed(() => `${session.progress}%`)
     <!-- Right: Status counts -->
     <div class="flex items-center gap-4 min-w-[200px] justify-end">
       <!-- Starred -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 h-full">
         <span class="w-2 h-2 shrink-0 rounded-full bg-sift-star" />
-        <span class="text-xs text-sift-muted leading-none">
-          <RollingNumber :value="session.starredCount" />
-        </span>
+        <RollingNumber :value="session.starredCount" class="text-xs text-sift-muted" />
       </div>
 
       <!-- Deleted -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 h-full">
         <span class="w-2 h-2 shrink-0 rounded-full bg-sift-delete" />
-        <span class="text-xs text-sift-muted leading-none">
-          <RollingNumber :value="session.deletedCount" />
-        </span>
+        <RollingNumber :value="session.deletedCount" class="text-xs text-sift-muted" />
       </div>
 
       <!-- Skipped -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 h-full">
         <span class="w-2 h-2 shrink-0 rounded-full bg-sift-skip" />
-        <span class="text-xs text-sift-muted leading-none">
-          <RollingNumber :value="session.skippedCount" />
-        </span>
+        <RollingNumber :value="session.skippedCount" class="text-xs text-sift-muted" />
       </div>
 
       <!-- Unprocessed -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 h-full">
         <span class="w-2 h-2 shrink-0 rounded-full bg-sift-accent" />
-        <span class="text-xs text-sift-muted leading-none">
-          <RollingNumber :value="session.unprocessedCount" />
-        </span>
+        <RollingNumber :value="session.unprocessedCount" class="text-xs text-sift-muted" />
       </div>
     </div>
   </div>

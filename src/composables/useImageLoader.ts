@@ -18,6 +18,8 @@ export function useImageLoader() {
   const currentSrc = ref('')
   const thumbnailSrc = ref('')
   const loadError = ref(false)
+  const naturalWidth = ref(0)
+  const naturalHeight = ref(0)
 
   // Image cache (only store successfully loaded images)
   const imageCache = new Map<string, HTMLImageElement>()
@@ -101,12 +103,14 @@ export function useImageLoader() {
 
     try {
       // Load full image
-      await preloadImage(pair.jpgPath)
+      const img = await preloadImage(pair.jpgPath)
 
       // Only apply if this is still the current load
       if (thisGeneration !== loadGeneration) return
 
       currentSrc.value = toSrc(pair.jpgPath)
+      naturalWidth.value = img.naturalWidth
+      naturalHeight.value = img.naturalHeight
       isLoading.value = false
 
       // Preload adjacent images
@@ -173,6 +177,8 @@ export function useImageLoader() {
     currentSrc,
     thumbnailSrc,
     loadError,
+    naturalWidth,
+    naturalHeight,
     toSrc,
     loadCurrentImage,
     retryLoad,
