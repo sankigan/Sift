@@ -157,14 +157,15 @@ export function useImageLoader() {
     }
   )
 
-  // Initial load
+  // Initial load (immediate: true ensures first image loads when component mounts with existing data)
   watch(
     () => session.pairs.length,
     (len) => {
       if (len > 0) {
         loadCurrentImage()
       }
-    }
+    },
+    { immediate: true }
   )
 
   return {
