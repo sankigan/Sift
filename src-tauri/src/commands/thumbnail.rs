@@ -55,8 +55,8 @@ fn process_thumbnail(
     let img = image::open(&input.jpg_path)
         .map_err(|e| format!("Failed to open image: {}", e))?;
 
-    // Generate 400px wide thumbnail
-    let thumb = img.thumbnail(400, 400);
+    // Generate 200px wide thumbnail (sufficient for 64px display)
+    let thumb = img.thumbnail(200, 200);
     thumb
         .save(&thumb_path)
         .map_err(|e| format!("Failed to save thumbnail: {}", e))?;

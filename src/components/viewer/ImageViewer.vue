@@ -55,9 +55,16 @@ function handleMouseLeaveNav() {
     <!-- Skeleton Loading -->
     <div
       v-if="isLoading && !thumbnailSrc"
-      class="absolute inset-0 flex items-center justify-center z-10"
+      class="absolute inset-0 flex flex-col items-center justify-center z-10 gap-4"
     >
-      <SkeletonImage width="70%" height="60%" />
+      <SkeletonImage width="60%" height="70%" />
+      <div class="flex items-center gap-2 text-sift-muted/50 text-xs">
+        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        <span>加载中...</span>
+      </div>
     </div>
 
     <!-- Thumbnail (shows while full image loads) -->

@@ -8,7 +8,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { FolderOpen, CheckCircle, Download, Archive } from 'lucide-vue-next'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useViewStore } from '@/stores/viewStore'
-import { archivePhotos, exportPicks, onArchiveProgress } from '@/services/tauriCommands'
+import { archivePhotos, exportPicks, deletePair, onArchiveProgress } from '@/services/tauriCommands'
 import { PhotoStatus, type ArchiveProgress } from '@/types'
 import RollingNumber from '@/components/status/RollingNumber.vue'
 
@@ -34,32 +34,47 @@ const starredPairs = computed(() =>
   session.pairs.filter((p) => p.status === PhotoStatus.Starred)
 )
 
+const deletedPairs = computed(() =>
+  session.pairs.filter((p) => p.status === PhotoStatus.Deleted)
+)
+
 async function handleArchive() {
   isArchiving.value = true
   archiveProgress.value = 0
 
-  // Listen for progress
-  const unlisten = await onArchiveProgress((progress: ArchiveProgress) => {
-    archiveProgress.value = progress.current
-    archiveTotal.value = progress.total
-    currentFile.value = progress.currentFile
-  })
-
   try {
-    const pairsData = survivingPairs.value.map((p) => ({
-      jpgPath: p.jpgPath,
-      rawPath: p.rawPath,
-      status: p.status,
-    }))
+    // Step 1: Delete pairs marked as Deleted
+    const toDelete = deletedPairs.value
+    for (const pair of toDelete) {
+      currentFile.value = pair.jpgPath.split('/').pop() || pair.jpgPath
+      await deletePair(pair.jpgPath, pair.rawPath)
+    }
 
-    const result = await archivePhotos(session.folderPath, pairsData)
-    resultMessage.value = `已归档 ${result.movedCount} 个文件`
-    isComplete.value = true
+    // Step 2: Archive surviving pairs
+    // Listen for progress
+    const unlisten = await onArchiveProgress((progress: ArchiveProgress) => {
+      archiveProgress.value = progress.current
+      archiveTotal.value = progress.total
+      currentFile.value = progress.currentFile
+    })
+
+    try {
+      const pairsData = survivingPairs.value.map((p) => ({
+        jpgPath: p.jpgPath,
+        rawPath: p.rawPath,
+        status: p.status,
+      }))
+
+      const result = await archivePhotos(session.folderPath, pairsData)
+      resultMessage.value = `已删除 ${toDelete.length} 组，归档 ${result.movedCount} 个文件`
+      isComplete.value = true
+    } finally {
+      unlisten()
+    }
   } catch (e: any) {
     resultMessage.value = `归档失败：${e.message || e}`
   } finally {
     isArchiving.value = false
-    unlisten()
   }
 }
 
@@ -166,11 +181,17 @@ const progressPercent = computed(() => {
             </p>
 
             <!-- Stats Summary -->
-            <div class="grid grid-cols-2 gap-3 mb-5">
+            <div class="grid grid-cols-3 gap-3 mb-5">
               <div class="bg-sift-card/60 rounded-xl p-3 border-l-2 border-sift-star">
                 <p class="text-[11px] text-sift-muted">已标记</p>
                 <p class="text-lg font-bold text-white">
                   <RollingNumber :value="starredPairs.length" />
+                </p>
+              </div>
+              <div class="bg-sift-card/60 rounded-xl p-3 border-l-2 border-sift-delete">
+                <p class="text-[11px] text-sift-muted">待删除</p>
+                <p class="text-lg font-bold text-white">
+                  <RollingNumber :value="deletedPairs.length" />
                 </p>
               </div>
               <div class="bg-sift-card/60 rounded-xl p-3 border-l-2 border-sift-success">
@@ -193,7 +214,7 @@ const progressPercent = computed(() => {
               <button
                 class="w-full h-12 rounded-xl bg-gradient-to-r from-sift-accent to-blue-500
                        text-white font-medium text-sm flex items-center justify-center gap-2
-                       btn-spring shadow-lg shadow-sift-accent/20"
+                       btn-spring btn-glow shadow-lg shadow-sift-accent/20"
                 @click="handleArchive"
               >
                 <Archive :size="16" />

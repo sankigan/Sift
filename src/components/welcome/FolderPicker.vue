@@ -142,7 +142,7 @@ function startCulling() {
             v-if="session.scanResult.pairs.length > 0"
             class="w-full h-12 rounded-xl bg-gradient-to-r from-sift-accent to-blue-500
                    text-white font-medium text-sm flex items-center justify-center gap-2
-                   hover:from-blue-500 hover:to-blue-400 btn-spring
+                   hover:from-blue-500 hover:to-blue-400 btn-spring btn-glow
                    shadow-lg shadow-sift-accent/20
                    transition-shadow duration-300"
             style="animation: slideUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1) 300ms both"

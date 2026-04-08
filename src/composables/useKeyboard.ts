@@ -24,6 +24,21 @@ export function useKeyboard() {
     // Don't handle if archive dialog is open
     if (view.showArchiveDialog) return
 
+    // Don't handle if summary card is open
+    if (view.showSummaryCard) return
+
+    // ESC closes filter gallery
+    if (e.key === 'Escape') {
+      if (view.filterCategory) {
+        e.preventDefault();
+        view.closeFilterGallery();
+        return;
+      }
+    }
+
+    // Don't handle other keys if filter gallery is open
+    if (view.filterCategory) return
+
     const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey
 
     switch (e.key) {
@@ -31,7 +46,6 @@ export function useKeyboard() {
       case 'F':
         e.preventDefault()
         session.markStar()
-        view.showToast('已标记 ⭐', 'star')
         break
 
       case 'x':
@@ -39,22 +53,18 @@ export function useKeyboard() {
       case 'Delete':
       case 'Backspace':
         e.preventDefault()
-        session.markDelete().then(() => {
-          view.showToast('已删除 🗑️', 'delete')
-        })
+        session.markDelete()
         break
 
       case ' ':
         e.preventDefault()
         session.markSkip()
-        view.showToast('已跳过 ⏭️', 'skip')
         break
 
       case 'ArrowRight':
         e.preventDefault()
         if (!isCtrlOrCmd) {
           session.markSkip()
-          view.showToast('已跳过 ⏭️', 'skip')
         }
         break
 

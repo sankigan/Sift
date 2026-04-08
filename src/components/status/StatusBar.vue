@@ -3,13 +3,20 @@
 // StatusBar - Bottom progress bar with rolling numbers
 // ============================================================
 
-import { computed } from 'vue'
-import { useSessionStore } from '@/stores/sessionStore'
-import RollingNumber from './RollingNumber.vue'
+import { computed } from 'vue';
+import { useSessionStore } from '@/stores/sessionStore';
+import { useViewStore } from '@/stores/viewStore';
+import { PhotoStatus } from '@/types';
+import RollingNumber from './RollingNumber.vue';
 
-const session = useSessionStore()
+const session = useSessionStore();
+const view = useViewStore();
 
-const progressWidth = computed(() => `${session.progress}%`)
+const progressWidth = computed(() => `${session.progress}%`);
+
+function handleStatusClick(status: PhotoStatus) {
+  view.openFilterGallery(status);
+}
 </script>
 
 <template>
@@ -43,31 +50,47 @@ const progressWidth = computed(() => `${session.progress}%`)
       </div>
     </div>
 
-    <!-- Right: Status counts -->
+    <!-- Right: Status counts (clickable) -->
     <div class="flex items-center gap-4 min-w-[200px] justify-end">
       <!-- Starred -->
-      <div class="flex items-center gap-1.5 h-full">
+      <button
+        class="flex items-center gap-1.5 h-full rounded px-1 -mx-1
+               hover:bg-white/5 transition-colors cursor-pointer"
+        @click="handleStatusClick(PhotoStatus.Starred)"
+      >
         <span class="w-2 h-2 shrink-0 rounded-full bg-sift-star" />
         <RollingNumber :value="session.starredCount" class="text-xs text-sift-muted" />
-      </div>
+      </button>
 
       <!-- Deleted -->
-      <div class="flex items-center gap-1.5 h-full">
+      <button
+        class="flex items-center gap-1.5 h-full rounded px-1 -mx-1
+               hover:bg-white/5 transition-colors cursor-pointer"
+        @click="handleStatusClick(PhotoStatus.Deleted)"
+      >
         <span class="w-2 h-2 shrink-0 rounded-full bg-sift-delete" />
         <RollingNumber :value="session.deletedCount" class="text-xs text-sift-muted" />
-      </div>
+      </button>
 
       <!-- Skipped -->
-      <div class="flex items-center gap-1.5 h-full">
+      <button
+        class="flex items-center gap-1.5 h-full rounded px-1 -mx-1
+               hover:bg-white/5 transition-colors cursor-pointer"
+        @click="handleStatusClick(PhotoStatus.Skipped)"
+      >
         <span class="w-2 h-2 shrink-0 rounded-full bg-sift-skip" />
         <RollingNumber :value="session.skippedCount" class="text-xs text-sift-muted" />
-      </div>
+      </button>
 
       <!-- Unprocessed -->
-      <div class="flex items-center gap-1.5 h-full">
+      <button
+        class="flex items-center gap-1.5 h-full rounded px-1 -mx-1
+               hover:bg-white/5 transition-colors cursor-pointer"
+        @click="handleStatusClick(PhotoStatus.Unprocessed)"
+      >
         <span class="w-2 h-2 shrink-0 rounded-full bg-sift-accent" />
         <RollingNumber :value="session.unprocessedCount" class="text-xs text-sift-muted" />
-      </div>
+      </button>
     </div>
   </div>
 </template>

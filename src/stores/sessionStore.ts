@@ -9,10 +9,11 @@ import {
   PhotoStatus,
   type PhotoPair,
   type ScanResult,
+  type ThumbnailResult,
   type UndoAction,
   type SlideDirection,
 } from '@/types'
-import { scanFolder, deletePair, generateThumbnails } from '@/services/tauriCommands'
+import { scanFolder, generateThumbnails } from '@/services/tauriCommands'
 
 export const useSessionStore = defineStore('session', () => {
   // ---- State ----
@@ -24,6 +25,7 @@ export const useSessionStore = defineStore('session', () => {
   const undoStack = ref<UndoAction[]>([])
   const slideDirection = ref<SlideDirection>('left')
   const isGeneratingThumbnails = ref(false)
+  const markActionCount = ref(0)
 
   // ---- Getters ----
   const currentPair = computed(() => pairs.value[currentIndex.value] || null)
@@ -67,6 +69,18 @@ export const useSessionStore = defineStore('session', () => {
 
   // ---- Actions ----
 
+  /** Apply thumbnail results to pairs */
+  function applyThumbnails(thumbs: ThumbnailResult[]) {
+    console.log(`[Sift] Applying ${thumbs.length} thumbnails`);
+    for (const thumb of thumbs) {
+      const pair = pairs.value.find((p) => p.id === thumb.id);
+      if (pair) {
+        pair.thumbnailPath = thumb.path;
+        pair.dominantColor = thumb.dominantColor;
+      }
+    }
+  }
+
   /** Scan a folder and populate pairs */
   async function startScan(path: string) {
     isScanning.value = true
@@ -83,36 +97,56 @@ export const useSessionStore = defineStore('session', () => {
       isScanning.value = false // 扫描完立即停止转圈，不等缩略图
     }
 
-    // 缩略图在后台异步生成，不阻塞 UI
+    // 分批生成缩略图（后台异步，不阻塞 startScan 返回）
     if (pairs.value.length > 0) {
       isGeneratingThumbnails.value = true
-      generateThumbnails(
-        pairs.value.map((p) => ({ id: p.id, jpgPath: p.jpgPath }))
-      )
+      const allInputs = pairs.value.map((p) => ({ id: p.id, jpgPath: p.jpgPath }))
+      const FIRST_BATCH = 10
+      const firstBatch = allInputs.slice(0, FIRST_BATCH)
+      const restBatch = allInputs.slice(FIRST_BATCH)
+
+      // 优先处理首批，完成后再处理剩余
+      generateThumbnails(firstBatch)
         .then((thumbs) => {
-          for (const thumb of thumbs) {
-            const pair = pairs.value.find((p) => p.id === thumb.id)
-            if (pair) {
-              pair.thumbnailPath = thumb.path
-              pair.dominantColor = thumb.dominantColor
-            }
+          applyThumbnails(thumbs)
+          if (restBatch.length > 0) {
+            return generateThumbnails(restBatch).then((rest) => applyThumbnails(rest))
           }
         })
-        .catch((e) => {
-          console.warn('Thumbnail generation failed:', e)
-        })
-        .finally(() => {
-          isGeneratingThumbnails.value = false
-        })
+        .catch((e) => console.warn('Thumbnail generation failed:', e))
+        .finally(() => { isGeneratingThumbnails.value = false })
     }
   }
 
   /** Navigate to next photo */
   function goNext() {
     if (currentIndex.value < pairs.value.length - 1) {
-      slideDirection.value = 'left'
-      currentIndex.value++
+      slideDirection.value = 'left';
+      currentIndex.value++;
     }
+  }
+
+  /** Navigate to the next unprocessed photo (skipping already marked ones) */
+  function goNextUnprocessed() {
+    const len = pairs.value.length;
+    // Search forward from current position
+    for (let i = currentIndex.value + 1; i < len; i++) {
+      if (pairs.value[i].status === PhotoStatus.Unprocessed) {
+        slideDirection.value = 'left';
+        currentIndex.value = i;
+        return;
+      }
+    }
+    // If nothing found ahead, wrap around and search from the beginning
+    for (let i = 0; i < currentIndex.value; i++) {
+      if (pairs.value[i].status === PhotoStatus.Unprocessed) {
+        slideDirection.value = 'left';
+        currentIndex.value = i;
+        return;
+      }
+    }
+    // No unprocessed photos left — just go to next sequentially
+    goNext();
   }
 
   /** Navigate to previous photo */
@@ -131,70 +165,90 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
-  /** Mark current photo as starred */
-  function markStar() {
-    const pair = currentPair.value
-    if (!pair) return
+  /** Toggle star on current photo */
+  function markStar(): 'starred' | 'unstarred' {
+    const idx = currentIndex.value;
+    const pair = pairs.value[idx];
+    if (!pair) return 'starred';
 
-    const prevStatus = pair.status
+    // Toggle: if already starred, revert to unprocessed
+    if (pair.status === PhotoStatus.Starred) {
+      pairs.value[idx] = { ...pair, status: PhotoStatus.Unprocessed };
+      goNextUnprocessed();
+      return 'unstarred';
+    }
+
     undoStack.value.push({
       type: 'star',
-      index: currentIndex.value,
-      previousStatus: prevStatus,
-    })
+      index: idx,
+      previousStatus: pair.status,
+    });
 
-    pair.status = PhotoStatus.Starred
-    goNext()
+    pairs.value[idx] = { ...pair, status: PhotoStatus.Starred };
+    markActionCount.value++;
+    goNextUnprocessed();
+    return 'starred';
   }
 
-  /** Mark current photo as deleted and move to trash */
-  async function markDelete() {
-    const pair = currentPair.value
-    if (!pair) return
+  /** Toggle delete on current photo (only marks status, actual deletion happens during archive) */
+  function markDelete(): 'deleted' | 'undeleted' {
+    const idx = currentIndex.value;
+    const pair = pairs.value[idx];
+    if (!pair) return 'deleted';
 
-    const prevStatus = pair.status
+    // Toggle: if already deleted, revert to unprocessed
+    if (pair.status === PhotoStatus.Deleted) {
+      pairs.value[idx] = { ...pair, status: PhotoStatus.Unprocessed };
+      goNextUnprocessed();
+      return 'undeleted';
+    }
+
     undoStack.value.push({
       type: 'delete',
-      index: currentIndex.value,
-      previousStatus: prevStatus,
-    })
+      index: idx,
+      previousStatus: pair.status,
+    });
 
-    try {
-      await deletePair(pair.jpgPath, pair.rawPath)
-      pair.status = PhotoStatus.Deleted
-      goNext()
-    } catch (e) {
-      // Remove the undo action if delete failed
-      undoStack.value.pop()
-      throw e
-    }
+    pairs.value[idx] = { ...pair, status: PhotoStatus.Deleted };
+    markActionCount.value++;
+    goNextUnprocessed();
+    return 'deleted';
   }
 
-  /** Skip current photo */
-  function markSkip() {
-    const pair = currentPair.value
-    if (!pair) return
+  /** Toggle skip on current photo */
+  function markSkip(): 'skipped' | 'unskipped' {
+    const idx = currentIndex.value;
+    const pair = pairs.value[idx];
+    if (!pair) return 'skipped';
 
-    const prevStatus = pair.status
+    // Toggle: if already skipped, revert to unprocessed
+    if (pair.status === PhotoStatus.Skipped) {
+      pairs.value[idx] = { ...pair, status: PhotoStatus.Unprocessed };
+      goNextUnprocessed();
+      return 'unskipped';
+    }
+
     undoStack.value.push({
       type: 'skip',
-      index: currentIndex.value,
-      previousStatus: prevStatus,
-    })
+      index: idx,
+      previousStatus: pair.status,
+    });
 
-    pair.status = PhotoStatus.Skipped
-    goNext()
+    pairs.value[idx] = { ...pair, status: PhotoStatus.Skipped };
+    markActionCount.value++;
+    goNextUnprocessed();
+    return 'skipped';
   }
 
   /** Undo last action */
   function undo() {
-    const action = undoStack.value.pop()
-    if (!action) return
+    const action = undoStack.value.pop();
+    if (!action) return;
 
-    const pair = pairs.value[action.index]
+    const pair = pairs.value[action.index];
     if (pair) {
-      pair.status = action.previousStatus
-      goTo(action.index)
+      pairs.value[action.index] = { ...pair, status: action.previousStatus };
+      goTo(action.index);
     }
   }
 
@@ -218,6 +272,7 @@ export const useSessionStore = defineStore('session', () => {
     undoStack,
     slideDirection,
     isGeneratingThumbnails,
+    markActionCount,
     // Getters
     currentPair,
     totalCount,

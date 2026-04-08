@@ -30,7 +30,7 @@ function handleUndo() {
   <Transition name="toast">
     <div
       v-if="view.toastVisible"
-      class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50
+      class="fixed bottom-[120px] left-1/2 -translate-x-1/2 z-50
              px-4 py-2.5 rounded-xl border backdrop-blur-lg
              flex items-center gap-3 shadow-lg"
       :class="bgColor"

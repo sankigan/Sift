@@ -6,11 +6,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { AppView } from '@/types'
+import { PhotoStatus } from '@/types'
 
 export const useViewStore = defineStore('view', () => {
   const currentView = ref<AppView>('welcome')
   const showExifPanel = ref(false)
   const showArchiveDialog = ref(false)
+  const showSummaryCard = ref(false)
 
   // Zoom state
   const zoomLevel = ref(1)
@@ -21,6 +23,9 @@ export const useViewStore = defineStore('view', () => {
   const toastMessage = ref('')
   const toastType = ref<'star' | 'delete' | 'skip' | 'undo' | 'info'>('info')
   const toastVisible = ref(false)
+
+  // Filter gallery
+  const filterCategory = ref<PhotoStatus | null>(null)
 
   function setView(view: AppView) {
     currentView.value = view
@@ -49,20 +54,32 @@ export const useViewStore = defineStore('view', () => {
     }, 3000)
   }
 
+  function openFilterGallery(category: PhotoStatus) {
+    filterCategory.value = category
+  }
+
+  function closeFilterGallery() {
+    filterCategory.value = null
+  }
+
   return {
     currentView,
     showExifPanel,
     showArchiveDialog,
+    showSummaryCard,
     zoomLevel,
     zoomOffsetX,
     zoomOffsetY,
     toastMessage,
     toastType,
     toastVisible,
+    filterCategory,
     setView,
     toggleExifPanel,
     toggleArchiveDialog,
     resetZoom,
     showToast,
+    openFilterGallery,
+    closeFilterGallery,
   }
 })
