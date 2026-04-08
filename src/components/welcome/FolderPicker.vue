@@ -195,7 +195,7 @@ function startCulling() {
           <div class="text-center">
             <p class="text-sm text-sift-text mb-1">选择照片文件夹</p>
             <p class="text-xs text-sift-muted">
-              选择包含 RAW + JPG 文件的文件夹
+              支持散落图片或已归档的 JPG / RAW 子文件夹
             </p>
           </div>
         </button>

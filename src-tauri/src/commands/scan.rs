@@ -1,6 +1,7 @@
 // ============================================================
 // Sift - Scan Command
-// Scans a folder, pairs JPG with RAW by filename, natord sorted
+// Smart scan: detects folder structure and pairs JPG with RAW
+// Supports: loose files, archived JPG/RAW subdirectories, or both
 // ============================================================
 
 use crate::models::photo::{PhotoPair, PhotoStatus, ScanResult};
@@ -11,23 +12,19 @@ use walkdir::WalkDir;
 
 #[tauri::command]
 pub async fn scan_folder(folder_path: String) -> Result<ScanResult, String> {
-    // Run the blocking scan in a background thread so it won't freeze the UI
     tokio::task::spawn_blocking(move || scan_folder_sync(&folder_path))
         .await
         .map_err(|e| format!("Task join error: {}", e))?
 }
 
-fn scan_folder_sync(folder_path: &str) -> Result<ScanResult, String> {
-    let path = Path::new(folder_path);
-    if !path.exists() || !path.is_dir() {
-        return Err(format!("Folder does not exist: {}", folder_path));
-    }
-
-    let mut jpg_map: HashMap<String, String> = HashMap::new();
-    let mut raw_map: HashMap<String, (String, String)> = HashMap::new();
-    let mut total_files: usize = 0;
-
-    for entry in WalkDir::new(path)
+/// Collect JPG and RAW files from a single directory (non-recursive)
+fn collect_files(
+    dir: &Path,
+    jpg_map: &mut HashMap<String, String>,
+    raw_map: &mut HashMap<String, (String, String)>,
+) -> usize {
+    let mut count: usize = 0;
+    for entry in WalkDir::new(dir)
         .max_depth(1)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -47,15 +44,44 @@ fn scan_folder_sync(folder_path: &str) -> Result<ScanResult, String> {
             let full_path = entry_path.to_string_lossy().to_string();
 
             if is_jpg(&ext_lower) {
-                total_files += 1;
+                count += 1;
                 jpg_map.insert(stem, full_path);
             } else if is_raw(&ext_lower) {
-                total_files += 1;
+                count += 1;
                 raw_map.insert(stem, (full_path, ext_lower));
             }
         }
     }
+    count
+}
 
+fn scan_folder_sync(folder_path: &str) -> Result<ScanResult, String> {
+    let path = Path::new(folder_path);
+    if !path.exists() || !path.is_dir() {
+        return Err(format!("Folder does not exist: {}", folder_path));
+    }
+
+    let mut jpg_map: HashMap<String, String> = HashMap::new();
+    let mut raw_map: HashMap<String, (String, String)> = HashMap::new();
+    let mut total_files: usize = 0;
+
+    // Phase 1: Scan root directory for loose JPG/RAW files
+    total_files += collect_files(path, &mut jpg_map, &mut raw_map);
+
+    // Phase 2: If root has no JPG files, check for archived JPG/ + RAW/ subdirectories
+    if jpg_map.is_empty() {
+        let jpg_dir = path.join("JPG");
+        let raw_dir = path.join("RAW");
+
+        if jpg_dir.is_dir() {
+            total_files += collect_files(&jpg_dir, &mut jpg_map, &mut raw_map);
+        }
+        if raw_dir.is_dir() {
+            total_files += collect_files(&raw_dir, &mut jpg_map, &mut raw_map);
+        }
+    }
+
+    // Build pairs from JPG map, matching RAW by stem
     let mut pairs: Vec<PhotoPair> = Vec::new();
     let mut paired_count: usize = 0;
     let mut jpg_only_count: usize = 0;

@@ -4,7 +4,7 @@
 // ============================================================
 
 import { computed } from 'vue'
-import { ArrowLeft, Info } from 'lucide-vue-next'
+import { ArrowLeft, Info, Archive } from 'lucide-vue-next'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useViewStore } from '@/stores/viewStore'
 
@@ -16,9 +16,17 @@ const folderName = computed(() => {
   return path.split('/').pop() || path.split('\\').pop() || path
 })
 
+const processedCount = computed(
+  () => session.starredCount + session.deletedCount + session.skippedCount
+)
+
 function goBack() {
   session.resetSession()
   view.setView('welcome')
+}
+
+function openArchive() {
+  view.toggleArchiveDialog()
 }
 </script>
 
@@ -63,8 +71,24 @@ function goBack() {
       </span>
     </div>
 
-    <!-- Right: EXIF toggle -->
+    <!-- Right: Archive + EXIF toggle -->
     <div class="flex items-center gap-2">
+      <button
+        v-if="processedCount > 0"
+        class="relative p-1.5 rounded-lg transition-colors btn-spring
+               hover:bg-white/10 text-sift-muted hover:text-sift-accent"
+        title="一键归档 (⌘Enter)"
+        @click="openArchive"
+      >
+        <Archive :size="16" />
+        <span
+          class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1
+                 rounded-full bg-sift-accent text-[10px] font-bold text-white
+                 flex items-center justify-center leading-none"
+        >
+          {{ processedCount }}
+        </span>
+      </button>
       <button
         class="p-1.5 rounded-lg transition-colors btn-spring"
         :class="view.showExifPanel ? 'bg-sift-accent/20 text-sift-accent' : 'hover:bg-white/10 text-sift-muted'"

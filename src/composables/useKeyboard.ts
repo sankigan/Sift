@@ -41,6 +41,16 @@ export function useKeyboard() {
 
     const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey
 
+    // Cmd/Ctrl + Enter: open archive dialog
+    if (isCtrlOrCmd && e.key === 'Enter') {
+      const processed = session.starredCount + session.deletedCount + session.skippedCount;
+      if (processed > 0) {
+        e.preventDefault();
+        view.toggleArchiveDialog();
+      }
+      return;
+    }
+
     switch (e.key) {
       case 'f':
       case 'F':

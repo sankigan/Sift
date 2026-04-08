@@ -38,6 +38,10 @@ const deletedPairs = computed(() =>
   session.pairs.filter((p) => p.status === PhotoStatus.Deleted)
 )
 
+const unprocessedCount = computed(
+  () => session.pairs.filter((p) => p.status === PhotoStatus.Unprocessed).length
+)
+
 async function handleArchive() {
   isArchiving.value = true
   archiveProgress.value = 0
@@ -207,6 +211,18 @@ const progressPercent = computed(() => {
               <p class="text-[11px] text-sift-muted mb-1">归档至</p>
               <p class="text-xs text-white truncate">{{ session.folderPath }}/</p>
               <p class="text-[10px] text-sift-muted mt-0.5">→ RAW/ 和 JPG/ 子文件夹</p>
+            </div>
+
+            <!-- Unprocessed warning -->
+            <div
+              v-if="unprocessedCount > 0"
+              class="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-5
+                     flex items-start gap-2"
+            >
+              <span class="text-amber-400 text-xs mt-0.5">⚠️</span>
+              <p class="text-xs text-amber-200/80">
+                还有 {{ unprocessedCount }} 张未处理照片，归档后它们将留在原位
+              </p>
             </div>
 
             <!-- Actions -->

@@ -35,7 +35,6 @@ pub fn archive_photos(
         let jpg_path = Path::new(&pair.jpg_path);
         if jpg_path.exists() {
             let filename = jpg_path.file_name().unwrap_or_default();
-            let dest = unique_path(&jpg_dir.join(filename));
 
             // Emit progress
             let _ = app.emit(
@@ -47,15 +46,19 @@ pub fn archive_photos(
                 },
             );
 
-            fs::rename(&jpg_path, &dest)
-                .map_err(|e| format!("Failed to move JPG {}: {}", pair.jpg_path, e))?;
-            moved_count += 1;
+            // Skip if file is already in the target directory
+            if !is_already_in_dir(jpg_path, &jpg_dir) {
+                let dest = unique_path(&jpg_dir.join(filename));
+                fs::rename(&jpg_path, &dest)
+                    .map_err(|e| format!("Failed to move JPG {}: {}", pair.jpg_path, e))?;
+                moved_count += 1;
+            }
         }
 
         // Move RAW
         if let Some(raw_path_str) = &pair.raw_path {
             let raw_path = Path::new(raw_path_str);
-            if raw_path.exists() {
+            if raw_path.exists() && !is_already_in_dir(raw_path, &raw_dir) {
                 let filename = raw_path.file_name().unwrap_or_default();
                 let dest = unique_path(&raw_dir.join(filename));
                 fs::rename(&raw_path, &dest)
@@ -70,6 +73,19 @@ pub fn archive_photos(
         jpg_folder: jpg_dir.to_string_lossy().to_string(),
         raw_folder: raw_dir.to_string_lossy().to_string(),
     })
+}
+
+/// Check if a file is already located inside the target directory
+fn is_already_in_dir(file: &Path, dir: &Path) -> bool {
+    let file_parent = match file.parent().and_then(|p| p.canonicalize().ok()) {
+        Some(p) => p,
+        None => return false,
+    };
+    let target = match dir.canonicalize().ok() {
+        Some(p) => p,
+        None => return false,
+    };
+    file_parent == target
 }
 
 /// Generate a unique file path by appending _1, _2, etc. if file already exists
