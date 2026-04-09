@@ -7,10 +7,12 @@
 import { ref, watch, nextTick, onMounted } from 'vue';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useViewStore } from '@/stores/viewStore';
 import { PhotoStatus } from '@/types';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 const session = useSessionStore();
+const view = useViewStore();
 
 const scrollContainer = ref<HTMLElement | null>(null);
 const thumbnailRefs = ref<HTMLElement[]>([]);
@@ -164,7 +166,9 @@ onMounted(async () => {
           :class="[
             index === session.currentIndex
               ? 'ring-2 ring-sift-accent ring-offset-1 ring-offset-[#121212] opacity-100 scale-105'
-              : 'opacity-50 hover:opacity-80',
+              : view.compareMode && index === view.compareIndex
+                ? 'ring-2 ring-blue-400 ring-offset-1 ring-offset-[#121212] opacity-90 scale-[1.03]'
+                : 'opacity-50 hover:opacity-80',
           ]"
           @click="handleClick(index)"
         >
@@ -188,6 +192,14 @@ onMounted(async () => {
             class="absolute bottom-0 left-0 right-0 h-1 rounded-b-md"
             :class="getStatusColor(pair.status)"
           />
+
+          <!-- Compare base badge -->
+          <div
+            v-if="view.compareMode && index === view.compareIndex"
+            class="absolute top-0 left-0 right-0 flex justify-center z-10"
+          >
+            <span class="text-[8px] bg-blue-500/80 text-white px-1 rounded-b leading-tight">基准</span>
+          </div>
         </div>
       </div>
     </div>

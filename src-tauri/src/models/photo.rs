@@ -59,6 +59,7 @@ pub struct ExifData {
     pub focal_length: String,
     pub date_taken: String,
     pub dimensions: Dimensions,
+    pub file_size: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

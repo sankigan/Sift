@@ -19,6 +19,10 @@ export const useViewStore = defineStore('view', () => {
   const zoomOffsetX = ref(0)
   const zoomOffsetY = ref(0)
 
+  // Compare mode state
+  const compareMode = ref(false)
+  const compareIndex = ref<number | null>(null)
+
   // Toast
   const toastMessage = ref('')
   const toastType = ref<'star' | 'delete' | 'skip' | 'undo' | 'info'>('info')
@@ -54,6 +58,27 @@ export const useViewStore = defineStore('view', () => {
     }, 3000)
   }
 
+  function toggleCompare(currentIdx: number) {
+    if (compareMode.value) {
+      exitCompare()
+    } else {
+      compareMode.value = true
+      compareIndex.value = currentIdx
+      resetZoom()
+    }
+  }
+
+  function exitCompare() {
+    compareMode.value = false
+    compareIndex.value = null
+  }
+
+  function swapCompare(currentIdx: number) {
+    if (compareMode.value) {
+      compareIndex.value = currentIdx
+    }
+  }
+
   function openFilterGallery(category: PhotoStatus) {
     filterCategory.value = category
   }
@@ -70,6 +95,8 @@ export const useViewStore = defineStore('view', () => {
     zoomLevel,
     zoomOffsetX,
     zoomOffsetY,
+    compareMode,
+    compareIndex,
     toastMessage,
     toastType,
     toastVisible,
@@ -79,6 +106,9 @@ export const useViewStore = defineStore('view', () => {
     toggleArchiveDialog,
     resetZoom,
     showToast,
+    toggleCompare,
+    exitCompare,
+    swapCompare,
     openFilterGallery,
     closeFilterGallery,
   }

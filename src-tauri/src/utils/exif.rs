@@ -3,11 +3,14 @@
 // ============================================================
 
 use crate::models::photo::{Dimensions, ExifData};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::BufReader;
 
 pub fn read_exif_data(jpg_path: &str) -> Result<ExifData, String> {
     let file = File::open(jpg_path).map_err(|e| format!("Failed to open file: {}", e))?;
+    let file_size = fs::metadata(jpg_path)
+        .map(|m| m.len())
+        .unwrap_or(0);
     let mut reader = BufReader::new(file);
 
     let exif_reader = exif::Reader::new();
@@ -39,6 +42,7 @@ pub fn read_exif_data(jpg_path: &str) -> Result<ExifData, String> {
         },
         date_taken,
         dimensions: Dimensions { width, height },
+        file_size,
     })
 }
 

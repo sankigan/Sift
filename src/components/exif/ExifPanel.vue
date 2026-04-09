@@ -16,6 +16,14 @@ const view = useViewStore()
 const exifData = ref<ExifData | null>(null)
 const isLoading = ref(false)
 
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '-';
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
 watch(
   [() => session.currentPair, () => view.showExifPanel],
   async ([pair, show]) => {
@@ -87,11 +95,7 @@ watch(
             <Aperture :size="14" class="text-sift-accent" />
             <span class="text-xs text-sift-muted uppercase tracking-wider">曝光</span>
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <p class="text-[11px] text-sift-muted">ISO</p>
-              <p class="text-sm text-white font-semibold">{{ exifData.iso || '-' }}</p>
-            </div>
+          <div class="grid grid-cols-3 gap-3">
             <div>
               <p class="text-[11px] text-sift-muted">光圈</p>
               <p class="text-sm text-white font-semibold">{{ exifData.aperture || '-' }}</p>
@@ -101,9 +105,13 @@ watch(
               <p class="text-sm text-white font-semibold">{{ exifData.shutterSpeed || '-' }}</p>
             </div>
             <div>
-              <p class="text-[11px] text-sift-muted">焦距</p>
-              <p class="text-sm text-white font-semibold">{{ exifData.focalLength || '-' }}</p>
+              <p class="text-[11px] text-sift-muted">ISO</p>
+              <p class="text-sm text-white font-semibold">{{ exifData.iso || '-' }}</p>
             </div>
+          </div>
+          <div>
+            <p class="text-[11px] text-sift-muted">焦距</p>
+            <p class="text-sm text-white font-semibold">{{ exifData.focalLength || '-' }}</p>
           </div>
         </div>
 
@@ -125,6 +133,10 @@ watch(
               <p class="text-sm text-white">
                 {{ exifData.dimensions?.width || '?' }} × {{ exifData.dimensions?.height || '?' }}
               </p>
+            </div>
+            <div>
+              <p class="text-[11px] text-sift-muted">文件大小</p>
+              <p class="text-sm text-white">{{ formatFileSize(exifData.fileSize) }}</p>
             </div>
           </div>
         </div>

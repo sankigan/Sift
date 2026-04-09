@@ -3,37 +3,35 @@
 // ActionBar - Floating action buttons (Star / Delete / Skip)
 // ============================================================
 
-import { Star, Trash2, SkipForward } from 'lucide-vue-next'
-import { useSessionStore } from '@/stores/sessionStore'
-import { ref, computed } from 'vue'
-import { PhotoStatus } from '@/types'
+import { Star, Trash2, SkipForward } from 'lucide-vue-next';
+import { useSessionStore } from '@/stores/sessionStore';
+import { ref, computed } from 'vue';
+import { PhotoStatus } from '@/types';
 
-const session = useSessionStore()
+const session = useSessionStore();
 
-const starActive = ref(false)
-const deleteActive = ref(false)
+const starActive = ref(false);
+const deleteActive = ref(false);
 
-const isStarred = computed(() => session.currentPair?.status === PhotoStatus.Starred)
-const isDeleted = computed(() => session.currentPair?.status === PhotoStatus.Deleted)
-const isSkipped = computed(() => session.currentPair?.status === PhotoStatus.Skipped)
+const isStarred = computed(() => session.currentPair?.status === PhotoStatus.Starred);
+const isDeleted = computed(() => session.currentPair?.status === PhotoStatus.Deleted);
+const isSkipped = computed(() => session.currentPair?.status === PhotoStatus.Skipped);
 
 async function handleStar() {
-  starActive.value = true
-  session.markStar()
-  setTimeout(() => (starActive.value = false), 400)
+  starActive.value = true;
+  session.markStar();
+  setTimeout(() => (starActive.value = false), 400);
 }
 
 function handleDelete() {
-  deleteActive.value = true
-  session.markDelete()
-  setTimeout(() => (deleteActive.value = false), 300)
+  deleteActive.value = true;
+  session.markDelete();
+  setTimeout(() => (deleteActive.value = false), 300);
 }
 
 function handleSkip() {
-  session.markSkip()
+  session.markSkip();
 }
-
-const isMac = navigator.platform.toUpperCase().includes('MAC')
 </script>
 
 <template>

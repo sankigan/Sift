@@ -16,6 +16,14 @@ const folderName = computed(() => {
   return path.split('/').pop() || path.split('\\').pop() || path
 })
 
+// 对比模式下显示基准图信息，否则显示当前图
+const displayPair = computed(() => {
+  if (view.compareMode && view.compareIndex !== null) {
+    return session.pairs[view.compareIndex] || session.currentPair;
+  }
+  return session.currentPair;
+})
+
 const processedCount = computed(
   () => session.starredCount + session.deletedCount + session.skippedCount
 )
@@ -51,16 +59,16 @@ function openArchive() {
     </div>
 
     <!-- Center: file name + RAW badge -->
-    <div class="flex items-center gap-2" v-if="session.currentPair">
+    <div class="flex items-center gap-2" v-if="displayPair">
       <span class="text-sm text-white/90 font-medium truncate max-w-[300px]">
-        {{ session.currentPair.jpgPath.split('/').pop()?.split('\\').pop() }}
+        {{ displayPair.jpgPath.split('/').pop()?.split('\\').pop() }}
       </span>
       <span
-        v-if="session.currentPair.rawFormat"
+        v-if="displayPair.rawFormat"
         class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase
                bg-sift-success/20 text-sift-success"
       >
-        {{ session.currentPair.rawFormat }}
+        {{ displayPair.rawFormat }}
       </span>
       <span
         v-else

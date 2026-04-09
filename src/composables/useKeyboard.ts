@@ -27,8 +27,13 @@ export function useKeyboard() {
     // Don't handle if summary card is open
     if (view.showSummaryCard) return
 
-    // ESC closes filter gallery
+    // ESC: compare mode > filter gallery
     if (e.key === 'Escape') {
+      if (view.compareMode) {
+        e.preventDefault();
+        view.exitCompare();
+        return;
+      }
       if (view.filterCategory) {
         e.preventDefault();
         view.closeFilterGallery();
@@ -101,6 +106,14 @@ export function useKeyboard() {
         if (!isCtrlOrCmd) {
           e.preventDefault()
           view.toggleExifPanel()
+        }
+        break
+
+      case 'c':
+      case 'C':
+        if (!isCtrlOrCmd) {
+          e.preventDefault()
+          view.toggleCompare(session.currentIndex)
         }
         break
 

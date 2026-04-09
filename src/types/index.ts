@@ -47,6 +47,7 @@ export interface ExifData {
   focalLength: string
   dateTaken: string
   dimensions: { width: number; height: number }
+  fileSize: number
 }
 
 /** Archive operation result */
