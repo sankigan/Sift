@@ -2,7 +2,7 @@
 name = "sift"
 version = "0.1.0"
 description = "RAW + JPG Photo Culling Tool"
-authors = ["Sift"]
+authors = ["sankigan"]
 edition = "2021"
 
 [lib]
