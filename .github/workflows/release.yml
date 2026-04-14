@@ -42,10 +42,7 @@ jobs:
           workspaces: './src-tauri -> target'
 
       - name: Install frontend dependencies
-        shell: bash
-        run: |
-          rm -rf node_modules
-          npm install
+        run: npm ci
 
       - name: Build and release with Tauri
         uses: tauri-apps/tauri-action@v0
