@@ -44,7 +44,7 @@ jobs:
       - name: Install frontend dependencies
         shell: bash
         run: |
-          rm -rf node_modules
+          rm -rf node_modules package-lock.json
           npm install
 
       - name: Build and release with Tauri
