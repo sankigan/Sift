@@ -69,14 +69,16 @@ export const useSessionStore = defineStore('session', () => {
 
   // ---- Actions ----
 
-  /** Apply thumbnail results to pairs */
+  /** Apply thumbnail results to pairs (Map indexed, O(n)) */
   function applyThumbnails(thumbs: ThumbnailResult[]) {
     console.log(`[Sift] Applying ${thumbs.length} thumbnails`);
+    const idToIndex = new Map<string, number>();
+    pairs.value.forEach((p, i) => idToIndex.set(p.id, i));
     for (const thumb of thumbs) {
-      const pair = pairs.value.find((p) => p.id === thumb.id);
-      if (pair) {
-        pair.thumbnailPath = thumb.path;
-        pair.dominantColor = thumb.dominantColor;
+      const idx = idToIndex.get(thumb.id);
+      if (idx !== undefined) {
+        pairs.value[idx].thumbnailPath = thumb.path;
+        pairs.value[idx].dominantColor = thumb.dominantColor;
       }
     }
   }
@@ -98,24 +100,25 @@ export const useSessionStore = defineStore('session', () => {
     }
 
     // 分批生成缩略图（后台异步，不阻塞 startScan 返回）
-    // 策略：首批 10 张快速处理（覆盖当前视口），剩余一次性全发
+    // 策略：首批 10 张快速处理（覆盖当前视口），剩余每 50 张一批流式处理
     if (pairs.value.length > 0) {
       isGeneratingThumbnails.value = true;
       const allInputs = pairs.value.map((p) => ({ id: p.id, jpgPath: p.jpgPath }));
       const FIRST_BATCH = 10;
-      const firstBatch = allInputs.slice(0, FIRST_BATCH);
-      const restBatch = allInputs.slice(FIRST_BATCH);
+      const CHUNK_SIZE = 50;
 
       (async () => {
         try {
           // 优先处理首批，快速让视口内缩略图可见
+          const firstBatch = allInputs.slice(0, FIRST_BATCH);
           const firstThumbs = await generateThumbnails(firstBatch);
           applyThumbnails(firstThumbs);
 
-          // 剩余全部一次性发送，后端并行处理
-          if (restBatch.length > 0) {
-            const restThumbs = await generateThumbnails(restBatch);
-            applyThumbnails(restThumbs);
+          // 剩余分批流式处理，每批完成立即更新 UI
+          for (let i = FIRST_BATCH; i < allInputs.length; i += CHUNK_SIZE) {
+            const chunk = allInputs.slice(i, i + CHUNK_SIZE);
+            const chunkThumbs = await generateThumbnails(chunk);
+            applyThumbnails(chunkThumbs);
           }
         } catch (e) {
           console.warn('Thumbnail generation failed:', e);

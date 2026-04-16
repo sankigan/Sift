@@ -1,6 +1,6 @@
 [package]
 name = "sift"
-version = "0.1.0"
+version = "1.0.0"
 description = "RAW + JPG Photo Culling Tool"
 authors = ["sankigan"]
 edition = "2021"

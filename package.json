@@ -1,13 +1,14 @@
 {
   "name": "sift",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "release": "bash scripts/release.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.3.0",
