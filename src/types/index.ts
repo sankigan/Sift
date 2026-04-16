@@ -10,6 +10,9 @@ export enum PhotoStatus {
   Skipped = 'skipped',
 }
 
+/** Photo source type */
+export type PhotoSource = 'jpg' | 'rawPreview';
+
 /** A paired photo (JPG + optional RAW) */
 export interface PhotoPair {
   id: string
@@ -20,6 +23,10 @@ export interface PhotoPair {
   thumbnailPath?: string
   /** Hex color string for ambient glow */
   dominantColor?: string
+  /** Source of the JPG preview */
+  source: PhotoSource
+  /** Associated XMP sidecar file paths */
+  xmpPaths: string[]
 }
 
 /** Result from scanning a folder */
@@ -28,6 +35,7 @@ export interface ScanResult {
   totalFiles: number
   pairedCount: number
   jpgOnlyCount: number
+  rawOnlyCount: number
 }
 
 /** Thumbnail generation result */

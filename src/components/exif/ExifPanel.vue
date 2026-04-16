@@ -32,7 +32,7 @@ watch(
     }
     isLoading.value = true
     try {
-      exifData.value = await readExif(pair.jpgPath)
+      exifData.value = await readExif(pair.jpgPath, pair.rawPath, pair.source)
     } catch (e) {
       exifData.value = null
     } finally {

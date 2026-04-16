@@ -5,7 +5,7 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/spec/v2.0.0.html) 规范。
 
-## [0.1.0] - 2025-04-09
+## [0.1.0] - 2025-04-16
 
 ### 新增
 
@@ -25,3 +25,27 @@
 - 动态滚动数字计数器
 - 支持 13+ 种 RAW 格式（CR2、CR3、NEF、ARW、RAF、ORF、RW2、DNG 等）
 - 暗色摄影工作站主题
+- 支持仅 RAW 文件（无配对 JPG）：自动提取 RAW 内嵌 JPEG 预览
+- 扫描结果新增"仅 RAW"计数统计卡片
+- XMP Sidecar 文件关联：扫描时自动识别并关联 XMP 文件，归档/导出/删除时一并处理
+- 右键上下文菜单：在 Finder/Explorer 中显示、复制图片到剪贴板
+- 缩略图生成优先提取 EXIF 内嵌缩略图，失败后再全量解码，大幅提升生成速度
+- RAW-only 照片的 EXIF 读取：优先从 RAW 原始文件提取元数据
+- 图片预览缓存管理：LRU 策略限制最大缓存数量为 30 张
+- 临时缓存自动清理：退出应用或返回首页时清理缩略图和 RAW 预览缓存目录
+
+### 改进
+
+- 文件扩展名集合使用 `once_cell` 静态缓存，避免重复构建
+- 缩略图批量生成策略优化：首批 10 张快速处理覆盖视口，剩余一次性并行处理
+- 缩略图生成使用 rayon 全核并行，最大化吞吐量
+- 删除操作改为异步 `spawn_blocking`，避免在 Windows 上阻塞 IPC 线程
+- 归档/导出/删除操作全面支持 `source` 和 `xmpPaths` 参数
+- 导航栏文件名显示：RAW-only 照片显示 RAW 文件名并标注"RAW 预览"徽章
+- 图片加载切换时立即清空旧图片，避免闪烁残留
+
+### 修复
+
+- 归档时 `fs::rename` 在 Windows 跨磁盘分区失败：改为先 rename 再 fallback 到 copy + remove
+- Windows "在文件夹中显示"功能：路径含空格时 Explorer 无法定位文件
+- Windows 复制图片到剪贴板：使用 Base64 编码 PowerShell 命令，避免路径特殊字符导致执行失败

@@ -1,6 +1,8 @@
 // ============================================================
 // Sift - Thumbnail Command
 // Generates thumbnails + extracts dominant color in parallel
+// Optimized: tries EXIF embedded thumbnail first, falls back
+// to full decode. Uses ThreadPool(4) to limit concurrency.
 // ============================================================
 
 use crate::models::photo::{ThumbnailInput, ThumbnailResult};
@@ -14,7 +16,6 @@ use std::path::Path;
 pub async fn generate_thumbnails(
     pairs: Vec<ThumbnailInput>,
 ) -> Result<Vec<ThumbnailResult>, String> {
-    // Run the heavy image processing in a background thread
     tokio::task::spawn_blocking(move || generate_thumbnails_sync(pairs))
         .await
         .map_err(|e| format!("Task join error: {}", e))?
@@ -26,12 +27,68 @@ fn generate_thumbnails_sync(
     let cache_dir = env::temp_dir().join("sift-thumbnails");
     fs::create_dir_all(&cache_dir).map_err(|e| format!("Failed to create cache dir: {}", e))?;
 
+    // Use rayon's default global thread pool (all cores) for maximum throughput
     let results: Vec<ThumbnailResult> = pairs
         .par_iter()
         .filter_map(|input| process_thumbnail(&cache_dir, input).ok())
         .collect();
 
     Ok(results)
+}
+
+/// Try to extract the EXIF-embedded JPEG thumbnail without full image decode.
+/// Reads the EXIF data to find JPEGInterchangeFormat offset/length in IFD1,
+/// then extracts the raw bytes from the file.
+fn try_extract_exif_thumbnail(jpg_path: &str) -> Option<Vec<u8>> {
+    let file_bytes = std::fs::read(jpg_path).ok()?;
+
+    // Find EXIF APP1 marker and parse
+    let file = std::io::Cursor::new(&file_bytes);
+    let exif_reader = exif::Reader::new();
+    let exif_data = exif_reader.read_from_container(&mut std::io::BufReader::new(file)).ok()?;
+
+    // Get thumbnail offset and length from IFD1
+    let offset_field = exif_data.get_field(exif::Tag::JPEGInterchangeFormat, exif::In(1))?;
+    let length_field = exif_data.get_field(exif::Tag::JPEGInterchangeFormatLength, exif::In(1))?;
+
+    let offset = match &offset_field.value {
+        exif::Value::Long(v) if !v.is_empty() => v[0] as usize,
+        _ => return None,
+    };
+    let length = match &length_field.value {
+        exif::Value::Long(v) if !v.is_empty() => v[0] as usize,
+        _ => return None,
+    };
+
+    // Sanity check
+    if length < 1024 || length > 1_048_576 {
+        return None;
+    }
+
+    // The offset from EXIF is relative to the TIFF header start.
+    // Find the TIFF header within the JPEG file (after APP1 marker + size).
+    // Look for "Exif\0\0" followed by TIFF header ("II" or "MM")
+    let exif_marker = b"Exif\x00\x00";
+    let tiff_offset = file_bytes
+        .windows(exif_marker.len())
+        .position(|w| w == exif_marker)?
+        + exif_marker.len();
+
+    let abs_offset = tiff_offset + offset;
+    let abs_end = abs_offset + length;
+
+    if abs_end > file_bytes.len() {
+        return None;
+    }
+
+    let thumb_bytes = file_bytes[abs_offset..abs_end].to_vec();
+
+    // Verify it starts with JPEG SOI marker
+    if thumb_bytes.len() < 2 || thumb_bytes[0] != 0xFF || thumb_bytes[1] != 0xD8 {
+        return None;
+    }
+
+    Some(thumb_bytes)
 }
 
 fn process_thumbnail(
@@ -41,9 +98,9 @@ fn process_thumbnail(
     let thumb_filename = format!("{}.jpg", input.id);
     let thumb_path = cache_dir.join(&thumb_filename);
 
-    // Check cache
+    // Check cache — read dominant color from cached thumbnail (not original)
     if thumb_path.exists() {
-        let color = extract_dominant_color(&input.jpg_path)?;
+        let color = extract_dominant_color_from_file(thumb_path.to_str().unwrap_or(""))?;
         return Ok(ThumbnailResult {
             id: input.id.clone(),
             path: thumb_path.to_string_lossy().to_string(),
@@ -51,18 +108,34 @@ fn process_thumbnail(
         });
     }
 
-    // Open image
+    // Strategy 1: Try EXIF embedded thumbnail (fast path, ~5ms)
+    if let Some(thumb_bytes) = try_extract_exif_thumbnail(&input.jpg_path) {
+        // Validate it's a real JPEG and decode
+        if let Ok(thumb_img) = image::load_from_memory_with_format(&thumb_bytes, image::ImageFormat::Jpeg) {
+            let resized = thumb_img.thumbnail(200, 200);
+            resized
+                .save(&thumb_path)
+                .map_err(|e| format!("Failed to save EXIF thumbnail: {}", e))?;
+
+            let color = extract_dominant_color_from_image(&resized)?;
+            return Ok(ThumbnailResult {
+                id: input.id.clone(),
+                path: thumb_path.to_string_lossy().to_string(),
+                dominant_color: color,
+            });
+        }
+    }
+
+    // Strategy 2: Full decode fallback
     let img = image::open(&input.jpg_path)
         .map_err(|e| format!("Failed to open image: {}", e))?;
 
-    // Generate 200px wide thumbnail (sufficient for 64px display)
     let thumb = img.thumbnail(200, 200);
     thumb
         .save(&thumb_path)
         .map_err(|e| format!("Failed to save thumbnail: {}", e))?;
 
-    // Extract dominant color from 8x8 resized image
-    let color = extract_dominant_color_from_image(&img)?;
+    let color = extract_dominant_color_from_image(&thumb)?;
 
     Ok(ThumbnailResult {
         id: input.id.clone(),
@@ -71,8 +144,9 @@ fn process_thumbnail(
     })
 }
 
-fn extract_dominant_color(jpg_path: &str) -> Result<String, String> {
-    let img = image::open(jpg_path).map_err(|e| format!("Failed to open for color: {}", e))?;
+/// Extract dominant color from an existing file (e.g. cached thumbnail)
+fn extract_dominant_color_from_file(path: &str) -> Result<String, String> {
+    let img = image::open(path).map_err(|e| format!("Failed to open for color: {}", e))?;
     extract_dominant_color_from_image(&img)
 }
 

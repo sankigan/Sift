@@ -3,3 +3,5 @@ pub mod delete;
 pub mod archive;
 pub mod export;
 pub mod thumbnail;
+pub mod file_actions;
+pub mod cache;

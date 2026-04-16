@@ -61,10 +61,19 @@ function openArchive() {
     <!-- Center: file name + RAW badge -->
     <div class="flex items-center gap-2" v-if="displayPair">
       <span class="text-sm text-white/90 font-medium truncate max-w-[300px]">
-        {{ displayPair.jpgPath.split('/').pop()?.split('\\').pop() }}
+        {{ displayPair.source === 'rawPreview' && displayPair.rawPath
+          ? displayPair.rawPath.split('/').pop()?.split('\\').pop()
+          : displayPair.jpgPath.split('/').pop()?.split('\\').pop() }}
       </span>
       <span
-        v-if="displayPair.rawFormat"
+        v-if="displayPair.source === 'rawPreview'"
+        class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase
+               bg-amber-500/20 text-amber-400"
+      >
+        RAW 预览
+      </span>
+      <span
+        v-else-if="displayPair.rawFormat"
         class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase
                bg-sift-success/20 text-sift-success"
       >

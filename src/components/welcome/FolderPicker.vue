@@ -85,7 +85,10 @@ function startCulling() {
       <div v-else-if="scanComplete && session.scanResult" class="w-full">
         <div class="w-full space-y-4">
           <!-- Stats Cards -->
-          <div class="grid grid-cols-3 gap-3">
+          <div
+            class="grid gap-3"
+            :class="session.scanResult.rawOnlyCount > 0 ? 'grid-cols-4' : 'grid-cols-3'"
+          >
             <!-- Paired -->
             <div
               class="bg-sift-card/80 backdrop-blur-sm rounded-xl p-4 border-l-2 border-sift-success
@@ -116,11 +119,27 @@ function startCulling() {
               </span>
             </div>
 
+            <!-- RAW Only -->
+            <div
+              v-if="session.scanResult.rawOnlyCount > 0"
+              class="bg-sift-card/80 backdrop-blur-sm rounded-xl p-4 border-l-2 border-amber-500
+                     transform transition-all duration-500"
+              style="animation: slideUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1) 150ms both"
+            >
+              <div class="flex items-center gap-2 mb-1">
+                <Camera :size="14" class="text-amber-500" />
+                <span class="text-xs text-sift-muted">仅 RAW</span>
+              </div>
+              <span class="text-2xl font-bold text-white">
+                {{ session.scanResult.rawOnlyCount }}
+              </span>
+            </div>
+
             <!-- Total Files -->
             <div
               class="bg-sift-card/80 backdrop-blur-sm rounded-xl p-4 border-l-2 border-sift-accent
                      transform transition-all duration-500"
-              style="animation: slideUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms both"
+              :style="`animation: slideUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1) ${session.scanResult.rawOnlyCount > 0 ? 200 : 200}ms both`"
             >
               <div class="flex items-center gap-2 mb-1">
                 <Camera :size="14" class="text-sift-accent" />
@@ -157,7 +176,7 @@ function startCulling() {
             v-else
             class="text-center text-sift-muted text-sm py-4"
           >
-            该文件夹中未找到 JPG 文件
+            该文件夹中未找到可处理的图片文件
           </p>
 
           <!-- Rescan button -->

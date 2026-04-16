@@ -3,9 +3,10 @@
 // App.vue - Root component with page routing
 // ============================================================
 
-import { ref, watch, defineAsyncComponent } from 'vue';
+import { ref, watch, defineAsyncComponent, onMounted, onUnmounted } from 'vue';
 import { useViewStore } from '@/stores/viewStore';
 import { useKeyboard } from '@/composables/useKeyboard';
+import { cleanupCache } from '@/services/tauriCommands';
 import FolderPicker from '@/components/welcome/FolderPicker.vue';
 
 const ImageViewer = defineAsyncComponent(() => import('@/components/viewer/ImageViewer.vue'));
@@ -23,6 +24,19 @@ const view = useViewStore();
 useKeyboard();
 
 const cullingReady = ref(false);
+
+// Cleanup cache on window close
+function handleBeforeUnload() {
+  cleanupCache().catch(() => {});
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+});
 
 watch(
   () => view.currentView,

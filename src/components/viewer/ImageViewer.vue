@@ -13,9 +13,13 @@ import { useAmbientColor } from '@/composables/useAmbientColor';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { ArrowLeftRight, Columns2 } from 'lucide-vue-next';
 import SkeletonImage from '@/components/common/SkeletonImage.vue';
+import ContextMenu from '@/components/common/ContextMenu.vue';
+import { useContextMenu } from '@/composables/useContextMenu';
+import { extractFileName } from '@/utils/path';
 
 const session = useSessionStore();
 const view = useViewStore();
+const contextMenu = useContextMenu();
 
 const containerRef = ref<HTMLElement | null>(null);
 const { isLoading, currentSrc, thumbnailSrc, loadError, naturalWidth, naturalHeight } = useImageLoader();
@@ -38,15 +42,19 @@ const compareFileName = computed(() => {
   if (view.compareIndex === null) return '';
   const pair = session.pairs[view.compareIndex];
   if (!pair) return '';
-  const parts = pair.jpgPath.split('/');
-  return parts[parts.length - 1];
+  if (pair.source === 'rawPreview' && pair.rawPath) {
+    return extractFileName(pair.rawPath);
+  }
+  return extractFileName(pair.jpgPath);
 });
 
 const currentFileName = computed(() => {
   const pair = session.currentPair;
   if (!pair) return '';
-  const parts = pair.jpgPath.split('/');
-  return parts[parts.length - 1];
+  if (pair.source === 'rawPreview' && pair.rawPath) {
+    return extractFileName(pair.rawPath);
+  }
+  return extractFileName(pair.jpgPath);
 });
 
 // Watch: if compareIndex pair gets deleted, exit compare
@@ -86,6 +94,12 @@ function handleMouseLeaveNav() {
   showLeftNav.value = false;
   showRightNav.value = false;
 }
+
+function handleContextMenu(e: MouseEvent, pairOverride?: typeof session.currentPair) {
+  const pair = pairOverride || session.currentPair;
+  if (!pair) return;
+  contextMenu.show(e, pair);
+}
 </script>
 
 <template>
@@ -107,7 +121,9 @@ function handleMouseLeaveNav() {
       <div class="absolute inset-0 flex">
         <!-- Left: Base Image (compareIndex) -->
         <div class="relative w-1/2 h-full flex items-center justify-center overflow-hidden
-                    border-r border-white/10">
+                    border-r border-white/10"
+             @contextmenu.prevent="view.compareIndex !== null && session.pairs[view.compareIndex] ? handleContextMenu($event, session.pairs[view.compareIndex]) : undefined"
+        >
           <!-- Top bar: label + filename -->
           <div class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5
@@ -132,7 +148,9 @@ function handleMouseLeaveNav() {
         </div>
 
         <!-- Right: Current Image (currentIndex) -->
-        <div class="relative w-1/2 h-full flex items-center justify-center overflow-hidden">
+        <div class="relative w-1/2 h-full flex items-center justify-center overflow-hidden"
+             @contextmenu.prevent="handleContextMenu($event)"
+        >
           <!-- Top bar: label + filename -->
           <div class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5
@@ -227,7 +245,9 @@ function handleMouseLeaveNav() {
 
     <!-- ==================== NORMAL MODE ==================== -->
     <template v-else>
-      <div class="absolute inset-0 flex items-center justify-center">
+      <div class="absolute inset-0 flex items-center justify-center"
+           @contextmenu.prevent="handleContextMenu($event)"
+      >
         <!-- Ambient Background Glow -->
         <div class="ambient-glow" :style="ambientStyle" />
 
@@ -361,5 +381,8 @@ function handleMouseLeaveNav() {
         <kbd class="text-[9px] text-white/30 bg-white/[0.06] px-1 rounded">C</kbd>
       </button>
     </div>
+
+    <!-- Context Menu -->
+    <ContextMenu />
   </div>
 </template>

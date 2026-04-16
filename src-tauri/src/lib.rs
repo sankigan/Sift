@@ -7,7 +7,7 @@ mod commands;
 mod models;
 mod utils;
 
-use commands::{archive, delete, export, scan, thumbnail};
+use commands::{archive, cache, delete, export, file_actions, scan, thumbnail};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -21,6 +21,9 @@ pub fn run() {
             archive::archive_photos,
             export::export_picks,
             thumbnail::generate_thumbnails,
+            file_actions::show_in_folder,
+            file_actions::copy_image_to_clipboard,
+            cache::cleanup_cache,
             read_exif,
         ])
         .run(tauri::generate_context!())
@@ -28,7 +31,20 @@ pub fn run() {
 }
 
 /// EXIF reading command (uses utils::exif)
+/// For RAW-only photos, reads EXIF from the RAW file instead of the preview JPG
 #[tauri::command]
-fn read_exif(jpg_path: String) -> Result<models::photo::ExifData, String> {
+fn read_exif(
+    jpg_path: String,
+    raw_path: Option<String>,
+    source: Option<String>,
+) -> Result<models::photo::ExifData, String> {
+    // For RAW-only photos, prefer reading EXIF from the RAW original
+    if source.as_deref() == Some("rawPreview") {
+        if let Some(rp) = &raw_path {
+            if let Ok(exif) = utils::exif::read_exif_data(rp) {
+                return Ok(exif);
+            }
+        }
+    }
     utils::exif::read_exif_data(&jpg_path)
 }

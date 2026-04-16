@@ -42,8 +42,12 @@ function getThumbnailSrc(pair: { thumbnailPath?: string; jpgPath: string }): str
   return convertFileSrc(pair.jpgPath);
 }
 
-function getFileName(path: string): string {
-  return path.split('/').pop()?.split('\\').pop() || '';
+function getFileName(pair: { jpgPath: string; rawPath?: string | null; source?: string }): string {
+  // For RAW-only photos, show the RAW filename
+  if (pair.source === 'rawPreview' && pair.rawPath) {
+    return pair.rawPath.split('/').pop()?.split('\\').pop() || '';
+  }
+  return pair.jpgPath.split('/').pop()?.split('\\').pop() || '';
 }
 
 function handleSelect(originalIndex: number) {
@@ -163,7 +167,7 @@ function switchCategory(key: PhotoStatus) {
             >
               <img
                 :src="getThumbnailSrc(pair)"
-                :alt="getFileName(pair.jpgPath)"
+                :alt="getFileName(pair)"
                 class="w-full h-full object-cover"
                 loading="lazy"
               />
@@ -173,7 +177,7 @@ function switchCategory(key: PhotoStatus) {
                        px-1.5 py-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <span class="text-[10px] text-white/80 truncate block">
-                  {{ getFileName(pair.jpgPath) }}
+                  {{ getFileName(pair) }}
                 </span>
               </div>
             </div>
@@ -181,5 +185,8 @@ function switchCategory(key: PhotoStatus) {
         </div>
       </div>
     </Transition>
+
+    <!-- Context Menu -->
+    <ContextMenu />
   </Teleport>
 </template>

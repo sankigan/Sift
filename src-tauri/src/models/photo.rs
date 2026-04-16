@@ -15,6 +15,16 @@ pub enum PhotoStatus {
     Skipped,
 }
 
+/// Source of the JPG preview image
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum PhotoSource {
+    /// Original JPG file
+    Jpg,
+    /// Preview extracted from RAW file
+    RawPreview,
+}
+
 /// A paired photo: one JPG + optional RAW
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,6 +36,9 @@ pub struct PhotoPair {
     pub status: PhotoStatus,
     pub thumbnail_path: Option<String>,
     pub dominant_color: Option<String>,
+    pub source: PhotoSource,
+    #[serde(default)]
+    pub xmp_paths: Vec<String>,
 }
 
 /// Result of scanning a folder
@@ -36,6 +49,7 @@ pub struct ScanResult {
     pub total_files: usize,
     pub paired_count: usize,
     pub jpg_only_count: usize,
+    pub raw_only_count: usize,
 }
 
 /// Thumbnail generation result for a single photo
@@ -101,6 +115,10 @@ pub struct ArchivePairInput {
     pub jpg_path: String,
     pub raw_path: Option<String>,
     pub status: String,
+    #[serde(default = "default_source")]
+    pub source: PhotoSource,
+    #[serde(default)]
+    pub xmp_paths: Vec<String>,
 }
 
 /// Input for export command
@@ -109,6 +127,15 @@ pub struct ArchivePairInput {
 pub struct ExportPairInput {
     pub jpg_path: String,
     pub raw_path: Option<String>,
+    #[serde(default = "default_source")]
+    pub source: PhotoSource,
+    #[serde(default)]
+    pub xmp_paths: Vec<String>,
+}
+
+/// Default source is Jpg for backward compatibility
+fn default_source() -> PhotoSource {
+    PhotoSource::Jpg
 }
 
 /// Input for thumbnail generation

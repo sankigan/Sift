@@ -38,6 +38,10 @@ const deletedPairs = computed(() =>
   session.pairs.filter((p) => p.status === PhotoStatus.Deleted)
 )
 
+const rawOnlyCount = computed(
+  () => session.pairs.filter((p) => p.source === 'rawPreview').length
+)
+
 const unprocessedCount = computed(
   () => session.pairs.filter((p) => p.status === PhotoStatus.Unprocessed).length
 )
@@ -50,8 +54,10 @@ async function handleArchive() {
     // Step 1: Delete pairs marked as Deleted
     const toDelete = deletedPairs.value
     for (const pair of toDelete) {
-      currentFile.value = pair.jpgPath.split('/').pop() || pair.jpgPath
-      await deletePair(pair.jpgPath, pair.rawPath)
+      currentFile.value = pair.source === 'rawPreview' && pair.rawPath
+        ? pair.rawPath.split('/').pop() || pair.rawPath
+        : pair.jpgPath.split('/').pop() || pair.jpgPath
+      await deletePair(pair.jpgPath, pair.rawPath, pair.source, pair.xmpPaths)
     }
 
     // Step 2: Archive surviving pairs
@@ -67,6 +73,8 @@ async function handleArchive() {
         jpgPath: p.jpgPath,
         rawPath: p.rawPath,
         status: p.status,
+        source: p.source,
+        xmpPaths: p.xmpPaths,
       }))
 
       const result = await archivePhotos(session.folderPath, pairsData)
@@ -96,6 +104,8 @@ async function handleExport() {
     const pairsData = starredPairs.value.map((p) => ({
       jpgPath: p.jpgPath,
       rawPath: p.rawPath,
+      source: p.source,
+      xmpPaths: p.xmpPaths,
     }))
 
     const result = await exportPicks(pairsData, selected)
@@ -204,6 +214,18 @@ const progressPercent = computed(() => {
                   <RollingNumber :value="survivingPairs.length" />
                 </p>
               </div>
+            </div>
+
+            <!-- RAW Only info -->
+            <div
+              v-if="rawOnlyCount > 0"
+              class="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-5
+                     flex items-start gap-2"
+            >
+              <span class="text-amber-400 text-xs mt-0.5">📷</span>
+              <p class="text-xs text-amber-200/80">
+                包含 {{ rawOnlyCount }} 张纯 RAW 照片（预览从 RAW 提取），归档后将生成配对 JPG
+              </p>
             </div>
 
             <!-- Archive path -->

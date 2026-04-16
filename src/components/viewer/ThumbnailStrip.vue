@@ -10,9 +10,12 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useViewStore } from '@/stores/viewStore';
 import { PhotoStatus } from '@/types';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import ContextMenu from '@/components/common/ContextMenu.vue';
+import { useContextMenu } from '@/composables/useContextMenu';
 
 const session = useSessionStore();
 const view = useViewStore();
+const contextMenu = useContextMenu();
 
 const scrollContainer = ref<HTMLElement | null>(null);
 const thumbnailRefs = ref<HTMLElement[]>([]);
@@ -171,6 +174,7 @@ onMounted(async () => {
                 : 'opacity-50 hover:opacity-80',
           ]"
           @click="handleClick(index)"
+          @contextmenu.prevent="contextMenu.show($event, pair)"
         >
           <!-- Dominant color placeholder -->
           <div
@@ -178,10 +182,12 @@ onMounted(async () => {
             :style="{ backgroundColor: getDominantColor(pair) }"
           />
 
-          <!-- Thumbnail image: prefer generated thumbnail, fallback to original jpg -->
+          <!-- Thumbnail image: prefer thumbnail, fallback to jpgPath with lazy loading -->
           <img
             :src="convertFileSrc(pair.thumbnailPath || pair.jpgPath)"
             :alt="`Photo ${index + 1}`"
+            loading="lazy"
+            decoding="async"
             class="absolute inset-0 w-full h-full object-cover"
             @error="($event.target as HTMLImageElement).style.display = 'none'"
           />
@@ -203,6 +209,9 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <!-- Context Menu -->
+    <ContextMenu />
   </div>
 </template>
 

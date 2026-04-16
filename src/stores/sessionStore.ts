@@ -13,7 +13,7 @@ import {
   type UndoAction,
   type SlideDirection,
 } from '@/types'
-import { scanFolder, generateThumbnails } from '@/services/tauriCommands'
+import { scanFolder, generateThumbnails, cleanupCache } from '@/services/tauriCommands'
 
 export const useSessionStore = defineStore('session', () => {
   // ---- State ----
@@ -98,23 +98,31 @@ export const useSessionStore = defineStore('session', () => {
     }
 
     // 分批生成缩略图（后台异步，不阻塞 startScan 返回）
+    // 策略：首批 10 张快速处理（覆盖当前视口），剩余一次性全发
     if (pairs.value.length > 0) {
-      isGeneratingThumbnails.value = true
-      const allInputs = pairs.value.map((p) => ({ id: p.id, jpgPath: p.jpgPath }))
-      const FIRST_BATCH = 10
-      const firstBatch = allInputs.slice(0, FIRST_BATCH)
-      const restBatch = allInputs.slice(FIRST_BATCH)
+      isGeneratingThumbnails.value = true;
+      const allInputs = pairs.value.map((p) => ({ id: p.id, jpgPath: p.jpgPath }));
+      const FIRST_BATCH = 10;
+      const firstBatch = allInputs.slice(0, FIRST_BATCH);
+      const restBatch = allInputs.slice(FIRST_BATCH);
 
-      // 优先处理首批，完成后再处理剩余
-      generateThumbnails(firstBatch)
-        .then((thumbs) => {
-          applyThumbnails(thumbs)
+      (async () => {
+        try {
+          // 优先处理首批，快速让视口内缩略图可见
+          const firstThumbs = await generateThumbnails(firstBatch);
+          applyThumbnails(firstThumbs);
+
+          // 剩余全部一次性发送，后端并行处理
           if (restBatch.length > 0) {
-            return generateThumbnails(restBatch).then((rest) => applyThumbnails(rest))
+            const restThumbs = await generateThumbnails(restBatch);
+            applyThumbnails(restThumbs);
           }
-        })
-        .catch((e) => console.warn('Thumbnail generation failed:', e))
-        .finally(() => { isGeneratingThumbnails.value = false })
+        } catch (e) {
+          console.warn('Thumbnail generation failed:', e);
+        } finally {
+          isGeneratingThumbnails.value = false;
+        }
+      })();
     }
   }
 
@@ -254,6 +262,9 @@ export const useSessionStore = defineStore('session', () => {
 
   /** Reset session */
   function resetSession() {
+    // Clean up cache directories
+    cleanupCache().catch((e) => console.warn('Cache cleanup failed:', e));
+
     folderPath.value = ''
     pairs.value = []
     currentIndex.value = 0

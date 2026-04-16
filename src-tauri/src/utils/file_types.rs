@@ -1,13 +1,15 @@
 // ============================================================
 // Sift - File Type Utilities
 // RAW and JPG extension detection and format mapping
+// Uses once_cell for static caching of extension sets
 // ============================================================
 
+use once_cell::sync::Lazy;
 use std::collections::HashSet;
 
-/// All recognized RAW file extensions (lowercase)
-pub fn raw_extensions() -> HashSet<&'static str> {
-    let exts: HashSet<&str> = [
+/// All recognized RAW file extensions (lowercase), cached statically
+static RAW_EXTENSIONS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
+    [
         // Canon
         "cr2", "cr3", "crw",
         // Nikon
@@ -45,23 +47,22 @@ pub fn raw_extensions() -> HashSet<&'static str> {
     ]
     .iter()
     .copied()
-    .collect();
-    exts
-}
+    .collect()
+});
 
-/// JPG/JPEG extensions (lowercase)
-pub fn jpg_extensions() -> HashSet<&'static str> {
+/// JPG/JPEG extensions (lowercase), cached statically
+static JPG_EXTENSIONS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
     ["jpg", "jpeg"].iter().copied().collect()
-}
+});
 
 /// Check if a file extension is a known RAW format
 pub fn is_raw(ext: &str) -> bool {
-    raw_extensions().contains(ext.to_lowercase().as_str())
+    RAW_EXTENSIONS.contains(ext.to_lowercase().as_str())
 }
 
 /// Check if a file extension is a JPG
 pub fn is_jpg(ext: &str) -> bool {
-    jpg_extensions().contains(ext.to_lowercase().as_str())
+    JPG_EXTENSIONS.contains(ext.to_lowercase().as_str())
 }
 
 /// Get the RAW format display name from extension

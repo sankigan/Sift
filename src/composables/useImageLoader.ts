@@ -10,6 +10,7 @@ import { useSessionStore } from '@/stores/sessionStore'
 
 /** Timeout for loading a single image (ms) */
 const LOAD_TIMEOUT = 30_000 // 30s for large RAW JPGs
+const MAX_CACHE_SIZE = 30 // LRU cache limit
 
 export function useImageLoader() {
   const session = useSessionStore()
@@ -61,6 +62,13 @@ export function useImageLoader() {
         if (!settled) {
           settled = true
           clearTimeout(timer)
+          // LRU eviction: remove oldest entries when cache is full
+          if (imageCache.size >= MAX_CACHE_SIZE) {
+            const firstKey = imageCache.keys().next().value
+            if (firstKey !== undefined) {
+              imageCache.delete(firstKey)
+            }
+          }
           imageCache.set(path, img)
           resolve(img)
         }
@@ -93,6 +101,7 @@ export function useImageLoader() {
 
     isLoading.value = true
     loadError.value = false
+    currentSrc.value = ''
 
     // Show thumbnail immediately if available
     if (pair.thumbnailPath) {
