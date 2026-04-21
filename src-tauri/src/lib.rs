@@ -11,10 +11,18 @@ use commands::{archive, cache, delete, export, file_actions, scan, thumbnail};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Clean up any leftover cache from previous sessions
+    cache::cleanup_cache_sync();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
+        .on_window_event(|_window, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                cache::cleanup_cache_sync();
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             scan::scan_folder,
             delete::delete_pair,
