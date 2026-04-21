@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicehash/tauri/dev/crates/tauri-cli/schema.json",
   "productName": "Sift",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.sift.app",
   "build": {
     "frontendDist": "../dist",
@@ -28,7 +28,9 @@
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["/**"],
+          "allow": [
+            "/**"
+          ],
           "requireLiteralLeadingDot": false
         }
       }
