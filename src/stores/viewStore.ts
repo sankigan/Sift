@@ -18,6 +18,7 @@ export const useViewStore = defineStore('view', () => {
   const zoomLevel = ref(1)
   const zoomOffsetX = ref(0)
   const zoomOffsetY = ref(0)
+  const rotation = ref(0)
 
   // Compare mode state
   const compareMode = ref(false)
@@ -47,6 +48,11 @@ export const useViewStore = defineStore('view', () => {
     zoomLevel.value = 1
     zoomOffsetX.value = 0
     zoomOffsetY.value = 0
+    rotation.value = 0
+  }
+
+  function rotateBy(delta: number) {
+    rotation.value += delta
   }
 
   function showToast(message: string, type: 'star' | 'delete' | 'skip' | 'undo' | 'info' = 'info') {
@@ -95,6 +101,7 @@ export const useViewStore = defineStore('view', () => {
     zoomLevel,
     zoomOffsetX,
     zoomOffsetY,
+    rotation,
     compareMode,
     compareIndex,
     toastMessage,
@@ -105,6 +112,7 @@ export const useViewStore = defineStore('view', () => {
     toggleExifPanel,
     toggleArchiveDialog,
     resetZoom,
+    rotateBy,
     showToast,
     toggleCompare,
     exitCompare,

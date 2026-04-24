@@ -6,6 +6,7 @@
 
 import { ref, computed, watch, onMounted, onUnmounted, type Ref } from 'vue';
 import { useViewStore } from '@/stores/viewStore';
+import { useSessionStore } from '@/stores/sessionStore';
 
 export function useImageZoom(
   containerRef: Ref<HTMLElement | null>,
@@ -13,6 +14,7 @@ export function useImageZoom(
   naturalHeight: Ref<number>,
 ) {
   const view = useViewStore();
+  const session = useSessionStore();
 
   const isDragging = ref(false);
   const dragStart = ref({ x: 0, y: 0 });
@@ -55,46 +57,61 @@ export function useImageZoom(
     }
   });
 
-  /** Base fit width: image scaled to fit container at zoom=1 */
+  /** Base fit width: image scaled to fit container at zoom=1 (rotation-aware, compare-aware) */
   const fitWidth = computed(() => {
-    const cw = containerWidth.value;
+    // In compare mode, each image occupies half of the container width
+    const cw = view.compareMode ? containerWidth.value / 2 : containerWidth.value;
     const ch = containerHeight.value;
     const nw = naturalWidth.value;
     const nh = naturalHeight.value;
     if (!cw || !ch || !nw || !nh) return 0;
 
-    const imgRatio = nw / nh;
+    // When rotated 90°/270°, image's bounding box is [nh x nw]
+    const swapped = view.rotation % 180 !== 0;
+    const ew = swapped ? nh : nw;
+    const eh = swapped ? nw : nh;
+
+    const imgRatio = ew / eh;
     const containerRatio = cw / ch;
 
-    if (imgRatio > containerRatio) {
-      return cw;
-    }
-    return ch * imgRatio;
+    // Effective bounding-box width that fits the container
+    const fitW = imgRatio > containerRatio ? cw : ch * imgRatio;
+
+    // Return <img>'s own (unrotated) width:
+    // when swapped, the <img>'s width corresponds to bounding-box's height
+    return swapped ? fitW * (nw / nh) : fitW;
   });
 
-  /** Image style: fit mode at zoom=1, explicit width when zoomed */
+  /** Image style: CSS max-constraints when unrotated at zoom=1, explicit width otherwise */
   const imageStyle = computed(() => {
     const fw = fitWidth.value;
+    const rot = view.rotation;
+    const rotated = rot % 180 !== 0;
+    const tr = isDragging.value
+      ? 'none'
+      : 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)';
 
-    // At zoom=1: use max constraints (no reflow, same as object-contain)
-    if (view.zoomLevel === 1 || !fw) {
+    // Unrotated zoom=1, or fitWidth not measured yet: pure CSS max-constraints.
+    if ((!rotated && view.zoomLevel === 1) || !fw) {
       return {
         maxWidth: '100%',
         maxHeight: '100%',
         width: 'auto',
-        transform: 'translate(0px, 0px)',
+        transform: `translate(0px, 0px) rotate(${rot}deg)`,
+        transition: tr,
         willChange: 'auto' as const,
       };
     }
 
-    // Zoomed: explicit width for native-res rendering + translate for pan
+    // Rotated or zoomed: explicit width so rotation never overflows & zoom uses native res
     const w = fw * view.zoomLevel;
     return {
       maxWidth: 'none',
       maxHeight: 'none',
       width: `${w}px`,
-      transform: `translate(${view.zoomOffsetX * view.zoomLevel}px, ${view.zoomOffsetY * view.zoomLevel}px)`,
-      willChange: 'transform' as const,
+      transform: `translate(${view.zoomOffsetX * view.zoomLevel}px, ${view.zoomOffsetY * view.zoomLevel}px) rotate(${rot}deg)`,
+      transition: tr,
+      willChange: view.zoomLevel === 1 ? ('auto' as const) : ('transform' as const),
     };
   });
 
@@ -143,8 +160,8 @@ export function useImageZoom(
     document.body.style.cursor = '';
   }
 
-  // Reset zoom when switching images
-  watch([naturalWidth, naturalHeight], () => {
+  // Reset zoom/rotation when switching images (index-based to handle same-size photos)
+  watch(() => session.currentIndex, () => {
     view.resetZoom();
   });
 

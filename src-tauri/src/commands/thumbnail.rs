@@ -91,11 +91,49 @@ fn try_extract_exif_thumbnail(jpg_path: &str) -> Option<Vec<u8>> {
     Some(thumb_bytes)
 }
 
+/// Read EXIF Orientation (1/2/3/4/5/6/7/8) from a JPEG file.
+/// Returns 1 (no-op) on any failure or if the tag is missing.
+fn read_jpeg_orientation(path: &str) -> u16 {
+    let Ok(file) = std::fs::File::open(path) else {
+        return 1;
+    };
+    let mut reader = std::io::BufReader::new(file);
+    let Ok(exif_data) = exif::Reader::new().read_from_container(&mut reader) else {
+        return 1;
+    };
+    exif_data
+        .get_field(exif::Tag::Orientation, exif::In::PRIMARY)
+        .and_then(|f| match &f.value {
+            exif::Value::Short(v) => v.first().copied(),
+            _ => None,
+        })
+        .unwrap_or(1)
+}
+
+/// Apply EXIF Orientation to a DynamicImage, producing pixels in the
+/// natural/upright orientation so downstream encoders (which discard EXIF)
+/// still render correctly.
+fn apply_orientation(img: image::DynamicImage, orientation: u16) -> image::DynamicImage {
+    match orientation {
+        2 => img.fliph(),
+        3 => img.rotate180(),
+        4 => img.flipv(),
+        5 => img.rotate90().fliph(),
+        6 => img.rotate90(),
+        7 => img.rotate270().fliph(),
+        8 => img.rotate270(),
+        _ => img, // 1 or unknown: no-op
+    }
+}
+
 fn process_thumbnail(
     cache_dir: &Path,
     input: &ThumbnailInput,
 ) -> Result<ThumbnailResult, String> {
-    let thumb_filename = format!("{}.jpg", input.id);
+    // Cache key v2: previous cache stored sensor-native (unrotated) pixels with
+    // no EXIF, which rendered sideways for portrait shots. v2 stores pixels
+    // already rotated to the upright orientation.
+    let thumb_filename = format!("{}_v2.jpg", input.id);
     let thumb_path = cache_dir.join(&thumb_filename);
 
     // Check cache — read dominant color from cached thumbnail (not original)
@@ -108,21 +146,34 @@ fn process_thumbnail(
         });
     }
 
+    // Read orientation once from the main JPEG; both strategies share it.
+    // The `image` crate does not apply EXIF orientation on decode, and our
+    // thumbnail encoder writes no EXIF, so we must bake rotation into pixels.
+    let orientation = read_jpeg_orientation(&input.jpg_path);
+
     // Strategy 1: Try EXIF embedded thumbnail (fast path, ~5ms)
     if let Some(thumb_bytes) = try_extract_exif_thumbnail(&input.jpg_path) {
         // Validate it's a real JPEG and decode
         if let Ok(thumb_img) = image::load_from_memory_with_format(&thumb_bytes, image::ImageFormat::Jpeg) {
-            let resized = thumb_img.thumbnail(200, 200);
-            resized
-                .save(&thumb_path)
-                .map_err(|e| format!("Failed to save EXIF thumbnail: {}", e))?;
+            // Skip tiny embedded thumbs (typically 160x120). Camera vendors
+            // letterbox/pillarbox them to fit a fixed frame, baking black bars
+            // into pixels that we can't strip. Anything under 240px on the
+            // short side is treated as suspicious and falls through to Strategy 2.
+            let (tw, th) = thumb_img.dimensions();
+            if tw.min(th) >= 240 {
+                let rotated = apply_orientation(thumb_img, orientation);
+                let resized = rotated.thumbnail(200, 200);
+                resized
+                    .save(&thumb_path)
+                    .map_err(|e| format!("Failed to save EXIF thumbnail: {}", e))?;
 
-            let color = extract_dominant_color_from_image(&resized)?;
-            return Ok(ThumbnailResult {
-                id: input.id.clone(),
-                path: thumb_path.to_string_lossy().to_string(),
-                dominant_color: color,
-            });
+                let color = extract_dominant_color_from_image(&resized)?;
+                return Ok(ThumbnailResult {
+                    id: input.id.clone(),
+                    path: thumb_path.to_string_lossy().to_string(),
+                    dominant_color: color,
+                });
+            }
         }
     }
 
@@ -130,7 +181,8 @@ fn process_thumbnail(
     let img = image::open(&input.jpg_path)
         .map_err(|e| format!("Failed to open image: {}", e))?;
 
-    let thumb = img.thumbnail(200, 200);
+    let rotated = apply_orientation(img, orientation);
+    let thumb = rotated.thumbnail(200, 200);
     thumb
         .save(&thumb_path)
         .map_err(|e| format!("Failed to save thumbnail: {}", e))?;

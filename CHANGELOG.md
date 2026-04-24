@@ -5,6 +5,19 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/spec/v2.0.0.html) 规范。
 
+## [1.0.2] - 2026-04-24
+
+### 新增
+
+- 图片旋转：右下角按钮或 `R` 键，每次顺时针 90°，带平滑过渡，切换图片自动重置
+
+### 修复
+
+- Sony ARW 等 RAW 内嵌预览横躺：preview JPEG 像素是传感器原生方向，旋转信息只挂在外层 RAW 的 IFD0 上；提取后将 Orientation 同步写入预览 JPEG 的 APP1/EXIF
+- 普通 JPEG 竖图缩略图横躺：缩略图生成未读取 EXIF Orientation，现已在 EXIF 内嵌缩略图与全量解码两条路径都应用旋转
+- 缩略图条上出现细黑边：相机内嵌缩略图（典型 160×120）会被 letterbox/pillarbox 把黑边烘进像素；短边小于 240 的内嵌缩略图直接跳过，由全解码兜底
+- 切换到尺寸相同的下一张图时缩放未重置：`watch` 监听项从图片尺寸改为图片索引
+
 ## [1.0.1] - 2025-04-21
 
 ### 修复

@@ -11,7 +11,7 @@ import { useImageLoader } from '@/composables/useImageLoader';
 import { useImageZoom } from '@/composables/useImageZoom';
 import { useAmbientColor } from '@/composables/useAmbientColor';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { ArrowLeftRight, Columns2 } from 'lucide-vue-next';
+import { ArrowLeftRight, Columns2, RotateCw } from 'lucide-vue-next';
 import SkeletonImage from '@/components/common/SkeletonImage.vue';
 import ContextMenu from '@/components/common/ContextMenu.vue';
 import { useContextMenu } from '@/composables/useContextMenu';
@@ -353,20 +353,32 @@ function handleContextMenu(e: MouseEvent, pairOverride?: typeof session.currentP
       </div>
     </template>
 
-    <!-- ==================== COMPARE TOGGLE BUTTON (always visible) ==================== -->
+    <!-- ==================== ACTION BUTTONS (always visible) ==================== -->
     <div
       class="absolute bottom-4 right-4 z-40
              px-2 py-1.5 rounded-xl
              bg-black/50 backdrop-blur-2xl
              shadow-[0_8px_32px_rgba(0,0,0,0.4)]
-             border border-white/10"
+             border border-white/10
+             flex items-center gap-1"
+      @dblclick.stop
+      @mousedown.stop
     >
       <button
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+        class="flex items-center justify-center w-8 h-8 rounded-lg
+               hover:bg-white/10 transition-all group btn-spring"
+        title="旋转 90°"
+        @click.stop="view.rotateBy(90)"
+      >
+        <RotateCw :size="16" class="text-white/40 group-hover:text-white transition-colors" />
+      </button>
+      <button
+        class="flex items-center justify-center w-8 h-8 rounded-lg
                transition-all group btn-spring"
         :class="view.compareMode
           ? 'bg-sift-accent/15 hover:bg-sift-accent/25'
           : 'hover:bg-white/10'"
+        :title="view.compareMode ? '退出对比' : '对比'"
         @click.stop="handleCompare"
       >
         <Columns2
@@ -374,11 +386,6 @@ function handleContextMenu(e: MouseEvent, pairOverride?: typeof session.currentP
           class="transition-colors"
           :class="view.compareMode ? 'text-sift-accent' : 'text-white/40 group-hover:text-white'"
         />
-        <span
-          class="text-[11px] transition-colors drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-          :class="view.compareMode ? 'text-sift-accent' : 'text-white/60 group-hover:text-white'"
-        >{{ view.compareMode ? '退出对比' : '对比' }}</span>
-        <kbd class="text-[9px] text-white/30 bg-white/[0.06] px-1 rounded">C</kbd>
       </button>
     </div>
 

@@ -117,6 +117,14 @@ export function useKeyboard() {
         }
         break
 
+      case 'r':
+      case 'R':
+        if (!isCtrlOrCmd) {
+          e.preventDefault()
+          view.rotateBy(90)
+        }
+        break
+
       case '0':
         e.preventDefault()
         view.resetZoom()
