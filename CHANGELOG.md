@@ -5,6 +5,12 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/spec/v2.0.0.html) 规范。
 
+## [Unreleased]
+
+### 新增
+
+- 欢迎页右下角显示版本号角标，点击可跳转 GitHub Release 页面查看发布说明
+
 ## [1.0.2] - 2026-04-24
 
 ### 新增

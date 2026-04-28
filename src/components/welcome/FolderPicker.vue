@@ -5,12 +5,19 @@
 
 import { ref } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
+import { open as openUrl } from '@tauri-apps/plugin-shell'
 import { FolderOpen, Camera, Image, Layers, ArrowRight } from 'lucide-vue-next'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useViewStore } from '@/stores/viewStore'
 
 const session = useSessionStore()
 const view = useViewStore()
+
+const version = __APP_VERSION__
+
+function openReleases() {
+  openUrl(`https://github.com/sankigan/Sift/releases/tag/v${version}`)
+}
 
 const isHovering = ref(false)
 const scanComplete = ref(false)
@@ -230,6 +237,18 @@ function startCulling() {
         支持 CR2 · CR3 · NEF · ARW · RAF · ORF · RW2 · DNG · PEF · 3FR · IIQ 等格式
       </p>
     </div>
+
+    <!-- Version badge: click to open GitHub release notes -->
+    <button
+      type="button"
+      class="absolute bottom-3 right-4 z-10 text-xs font-mono
+             text-sift-muted/60 hover:text-sift-muted
+             transition-colors select-none"
+      :title="`查看 v${version} 发布说明`"
+      @click="openReleases"
+    >
+      v{{ version }}
+    </button>
   </div>
 </template>
 
